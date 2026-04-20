@@ -28,7 +28,7 @@
     "Dec-25",
     "Jan-26",
     "Feb-26",
-    "Apr-26"
+    "Mar-26"
   ],
   "months_fast_extended": [
     "Jan-23",
@@ -837,7 +837,7 @@
       "Dec-25",
       "Jan-26",
       "Feb-26",
-      "Apr-26"
+      "Mar-26"
     ],
     "slow_total_K": [
       413.1,
@@ -1031,9 +1031,9 @@
     }
   },
   "_meta": {
-    "generated_at": "2026-04-20T17:42:37.366860",
+    "generated_at": "2026-04-20T17:44:53.439801",
     "total_months": 27,
-    "latest_month": "Apr-26",
+    "latest_month": "Mar-26",
     "historical_months": 26,
     "new_months_added": 1
   }
