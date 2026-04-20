@@ -102,18 +102,30 @@ def apply_operator_mapping(df: pd.DataFrame, mapping: dict) -> pd.DataFrame:
 
 
 def determine_charger_type(df: pd.DataFrame) -> pd.DataFrame:
-    """급속/완속 구분. newtype 컬럼 우선, 없으면 output(kW) 기준."""
+    """급속/완속 구분.
+    우선순위: newtype → output kW(50 미만=완속, 이상=급속) → chgerType(02=완속, 나머지=급속)
+    """
     df = df.copy()
     if "newtype" in df.columns:
         df["charger_type"] = df["newtype"].map({"급속": "fast", "완속": "slow"})
     elif "output" in df.columns:
-        # 50kW 이상 = 급속
         df["output"] = pd.to_numeric(df["output"], errors="coerce")
-        df["charger_type"] = df["output"].apply(lambda x: "fast" if x >= 50 else "slow")
+        df["charger_type"] = df["output"].apply(
+            lambda x: "fast" if pd.notna(x) and x >= 50 else ("slow" if pd.notna(x) else None)
+        )
+        # output 없는 레코드는 chgerType으로 보완 (02=AC완속, 나머지=급속)
+        if "chgerType" in df.columns:
+            mask = df["charger_type"].isna()
+            df.loc[mask, "charger_type"] = df.loc[mask, "chgerType"].apply(
+                lambda t: "slow" if str(t).strip() == "02" else "fast"
+            )
+    elif "chgerType" in df.columns:
+        df["charger_type"] = df["chgerType"].apply(
+            lambda t: "slow" if str(t).strip() == "02" else "fast"
+        )
     else:
-        raise ValueError("newtype 또는 output 컬럼이 필요합니다.")
+        raise ValueError("newtype / output / chgerType 컬럼 중 하나가 필요합니다.")
 
-    # 분류 실패는 제외
     df = df.dropna(subset=["charger_type"])
     return df
 
