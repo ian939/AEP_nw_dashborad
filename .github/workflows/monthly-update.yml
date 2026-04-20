@@ -1,0 +1,53 @@
+name: Monthly Dashboard Update
+
+on:
+  schedule:
+    # 매월 1일 KST 03:00 (UTC 18:00 of previous day)
+    # cron은 UTC 기준 → 매월 1일 18:00 UTC = 매월 2일 03:00 KST
+    # 안전하게 매월 1일 KST 03:00 (매월 전날 18:00 UTC)로 설정
+    - cron: '0 18 1 * *'
+  workflow_dispatch:  # 수동 실행 가능
+
+jobs:
+  update-dashboard:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Fetch data from 환경부 API
+        env:
+          MOE_API_KEY: ${{ secrets.MOE_API_KEY }}
+        run: python scripts/fetch_api.py
+
+      - name: Transform raw → monthly snapshot
+        run: python scripts/transform.py
+
+      - name: Build dashboard data
+        run: python scripts/build_dashboard_data.py
+
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add data/
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            MONTH=$(date -u -d '1 hour' +'%Y-%m')
+            git commit -m "chore: monthly data update ($MONTH)"
+            git push
+          fi

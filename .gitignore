@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Raw data files (크기가 커서 GitHub 부담 → 최근 것만 유지)
+data/raw/*.xlsx
+# parquet은 커밋해도 괜찮음 (이력 필요시). 크기 부담되면 아래 줄도 주석 해제:
+# data/raw/*.parquet
+
+# Logs
+*.log
