@@ -21,6 +21,10 @@
       {
         "operator": "플러그링크",
         "count": 42133
+      },
+      {
+        "operator": "SK일렉링크",
+        "count": 4878
       }
     ],
     "top5_total": 273739,
@@ -196,53 +200,53 @@
   },
   "fast_regional": {
     "GSMA": {
-      "total": 0,
+      "total": 19581,
       "operators": {
         "채비": {
-          "count": 0,
-          "ms_pct": 0
+          "count": 1748,
+          "ms_pct": 8.93
         },
         "SK일렉링크": {
-          "count": 0,
-          "ms_pct": 0
+          "count": 2412,
+          "ms_pct": 12.32
         },
         "이브이시스": {
-          "count": 0,
-          "ms_pct": 0
+          "count": 977,
+          "ms_pct": 4.99
         }
       }
     },
     "광역시": {
-      "total": 0,
+      "total": 6993,
       "operators": {
         "채비": {
-          "count": 0,
-          "ms_pct": 0
+          "count": 1516,
+          "ms_pct": 21.68
         },
         "SK일렉링크": {
-          "count": 0,
-          "ms_pct": 0
+          "count": 836,
+          "ms_pct": 11.95
         },
         "이브이시스": {
-          "count": 0,
-          "ms_pct": 0
+          "count": 306,
+          "ms_pct": 4.38
         }
       }
     },
     "GSMA+광역시": {
-      "total": 0,
+      "total": 26574,
       "operators": {
         "채비": {
-          "count": 0,
-          "ms_pct": 0
+          "count": 3264,
+          "ms_pct": 12.28
         },
         "SK일렉링크": {
-          "count": 0,
-          "ms_pct": 0
+          "count": 3248,
+          "ms_pct": 12.22
         },
         "이브이시스": {
-          "count": 0,
-          "ms_pct": 0
+          "count": 1283,
+          "ms_pct": 4.83
         }
       }
     },
@@ -267,24 +271,24 @@
   "fast_concentration": {
     "채비": {
       "nationwide": 5906,
-      "GSMA_pct": 0.0,
-      "GSMA_plus_metro_pct": 0.0
+      "GSMA_pct": 29.6,
+      "GSMA_plus_metro_pct": 55.27
     },
     "SK일렉링크": {
       "nationwide": 4833,
-      "GSMA_pct": 0.0,
-      "GSMA_plus_metro_pct": 0.0
+      "GSMA_pct": 49.91,
+      "GSMA_plus_metro_pct": 67.2
     },
     "이브이시스": {
       "nationwide": 2296,
-      "GSMA_pct": 0.0,
-      "GSMA_plus_metro_pct": 0.0
+      "GSMA_pct": 42.55,
+      "GSMA_plus_metro_pct": 55.88
     }
   },
   "_meta": {
-    "year_month": "2026-04",
+    "year_month": "2026-03",
     "source_file": "raw_20260420.parquet",
-    "processed_at": "2026-04-20T17:35:18.334511",
+    "processed_at": "2026-04-20T17:53:16.713057",
     "raw_row_count": 503397
   }
 }

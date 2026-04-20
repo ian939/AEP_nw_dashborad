@@ -131,20 +131,32 @@ def determine_charger_type(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def determine_region(df: pd.DataFrame, mapping: dict) -> pd.DataFrame:
-    """지역명 → GSMA / 광역시 / 기타 분류."""
+    """지역명 또는 zcode → GSMA / 광역시 / 기타 분류."""
     df = df.copy()
-    gsma = set(mapping["region_groups"]["GSMA"])
-    metro = set(mapping["region_groups"]["광역시"])
+    rg = mapping["region_groups"]
 
-    def classify(region):
-        if region in gsma:
-            return "GSMA"
-        elif region in metro:
-            return "광역시"
-        return "기타"
-
-    col = "지역명" if "지역명" in df.columns else "zcode"
-    df["region_group"] = df[col].apply(classify) if col == "지역명" else "기타"
+    if "지역명" in df.columns:
+        gsma = set(rg["GSMA"])
+        metro = set(rg["광역시"])
+        def classify(v):
+            if v in gsma: return "GSMA"
+            if v in metro: return "광역시"
+            return "기타"
+        df["region_group"] = df["지역명"].apply(classify)
+    elif "zcode" in df.columns:
+        gsma_z = set(rg.get("GSMA_zcode", []))
+        metro_z = set(rg.get("광역시_zcode", []))
+        def classify_z(v):
+            try:
+                v = int(v)
+            except (ValueError, TypeError):
+                return "기타"
+            if v in gsma_z: return "GSMA"
+            if v in metro_z: return "광역시"
+            return "기타"
+        df["region_group"] = df["zcode"].apply(classify_z)
+    else:
+        df["region_group"] = "기타"
     return df
 
 
@@ -162,11 +174,12 @@ def aggregate_snapshot(df: pd.DataFrame, mapping: dict) -> dict:
 
         # Top 5 추적 (고정)
         tracked_ops = mapping["dashboard_tracked"][ctype]
+        extra_ops = mapping["dashboard_tracked"].get(f"{ctype}_extra", [])
         top5 = [
             {"operator": op, "count": int(by_operator.get(op, 0))}
-            for op in tracked_ops
+            for op in tracked_ops + extra_ops
         ]
-        top5_total = sum(item["count"] for item in top5)
+        top5_total = sum(item["count"] for item in top5 if item["operator"] in tracked_ops)
         top5_ms = (top5_total / total * 100) if total > 0 else 0
 
         result[ctype] = {

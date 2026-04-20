@@ -93,6 +93,8 @@ def merge_into_dashboard(historical: dict, snapshots: list) -> dict:
             continue
 
         result["months"].append(label)
+        if "months_fast_extended" in result:
+            result["months_fast_extended"].append(label)
 
         for op_data in snap["slow"]["top5"]:
             op = op_data["operator"]
