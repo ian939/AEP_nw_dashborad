@@ -424,7 +424,8 @@
 </div>
 
 <nav class="tabs">
-  <button class="tab active" data-tab="overview">① Market Overview</button>
+  <button class="tab active" data-tab="ev">⓪ Domestic EV Market</button>
+  <button class="tab" data-tab="overview">① N/W Market Overview</button>
   <button class="tab" data-tab="slow">② Slow Charger CPO Landscape</button>
   <button class="tab" data-tab="fast">③ Fast Charger CPO Landscape</button>
   <button class="tab" data-tab="concentration">④ Top 3 Concentration</button>
@@ -433,8 +434,39 @@
 
 <main>
 
+  <!-- TAB 0: EV MARKET -->
+  <section class="tab-panel active" id="tab-ev">
+    <div class="grid-kpi" id="evKpiGrid">
+      <div class="kpi"><div class="label">Total Registered EVs</div><div class="value" id="evKpiTotal">—</div><div class="delta" id="evKpiTotalDelta"></div></div>
+      <div class="kpi"><div class="label">Passenger EVs</div><div class="value" id="evKpiPass">—</div><div class="delta up" id="evKpiPassSub" style="font-size:10.5px;color:var(--text-muted)"></div></div>
+      <div class="kpi"><div class="label">EV Penetration Rate</div><div class="value" id="evKpiPen">—</div><div class="delta" id="evKpiPenDelta"></div></div>
+      <div class="kpi"><div class="label">Monthly EV Sales (Latest)</div><div class="value" id="evKpiSales">—</div><div class="delta" id="evKpiSalesDelta"></div></div>
+    </div>
+
+    <div class="grid-2" style="margin-top:20px;">
+      <div class="card">
+        <div class="card-header"><h3>Cumulative Registered EVs & Penetration Rate</h3><span class="tag ev">EV</span></div>
+        <div class="card-body"><div class="chart-wrap"><canvas id="chartEvRegistered"></canvas></div></div>
+        <div class="source">Source: MOLIT · Jan '21 ~ Mar '26</div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>Monthly EV Sales & EV Sales Share</h3><span class="tag ev">Sales</span></div>
+        <div class="card-body"><div class="chart-wrap"><canvas id="chartEvSales"></canvas></div></div>
+        <div class="source">Source: MOLIT · LTM Domestic EV Sales · Aug '22 ~ Mar '26</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+      <div class="card-header"><h3>Domestic EV Sector Key Metrics (Cumulative) · Mar '25 ~ Mar '26</h3><span class="tag ev">EV</span></div>
+      <div class="card-body" style="padding:0; overflow-x:auto;">
+        <table class="tbl" id="evMetricsTable"></table>
+      </div>
+      <div class="source">Source: MOLIT, MOE · (1) Passenger EV Sales / Total Passenger Vehicle Sales; (2) Commercial EV Sales / Total Commercial Vehicle Sales</div>
+    </div>
+  </section>
+
   <!-- TAB 1: OVERVIEW -->
-  <section class="tab-panel active" id="tab-overview">
+  <section class="tab-panel" id="tab-overview">
     <div class="grid-kpi">
       <div class="kpi">
         <div class="label">Total Slow Charging Ports</div>
@@ -508,40 +540,6 @@
         <div class="card-header"><h3><em>Top 5 Fast Charger Players M/S (%)</em><span class="latest-chip">Latest M/S</span></h3><span class="tag fast">Fast</span></div>
         <div class="card-body"><div class="chart-wrap"><canvas id="chartFastMS"></canvas></div></div>
       </div>
-    </div>
-    <!-- EV MARKET SECTION -->
-    <div class="section-divider">
-      <div class="eyebrow">Domestic EV Market</div>
-      <h3>EV Registration & Sales Overview</h3>
-      <p>Source: Ministry of Land, Infrastructure and Transport (MOLIT), Ministry of Environment (MOE) · Jan '21 ~ Mar '26</p>
-    </div>
-
-    <div class="grid-kpi" id="evKpiGrid">
-      <div class="kpi"><div class="label">Total Registered EVs</div><div class="value" id="evKpiTotal">—</div><div class="delta" id="evKpiTotalDelta"></div></div>
-      <div class="kpi"><div class="label">Passenger EVs</div><div class="value" id="evKpiPass">—</div><div class="delta up" id="evKpiPassSub" style="font-size:10.5px;color:var(--text-muted)"></div></div>
-      <div class="kpi"><div class="label">EV Penetration Rate</div><div class="value" id="evKpiPen">—</div><div class="delta" id="evKpiPenDelta"></div></div>
-      <div class="kpi"><div class="label">Monthly EV Sales (Latest)</div><div class="value" id="evKpiSales">—</div><div class="delta" id="evKpiSalesDelta"></div></div>
-    </div>
-
-    <div class="grid-2">
-      <div class="card">
-        <div class="card-header"><h3>Cumulative Registered EVs & Penetration Rate</h3><span class="tag ev">EV</span></div>
-        <div class="card-body"><div class="chart-wrap"><canvas id="chartEvRegistered"></canvas></div></div>
-        <div class="source">Source: MOLIT · Jan '21 ~ Mar '26</div>
-      </div>
-      <div class="card">
-        <div class="card-header"><h3>Monthly EV Sales & EV Sales Share</h3><span class="tag ev">Sales</span></div>
-        <div class="card-body"><div class="chart-wrap"><canvas id="chartEvSales"></canvas></div></div>
-        <div class="source">Source: MOLIT · LTM Domestic EV Sales · Aug '22 ~ Mar '26</div>
-      </div>
-    </div>
-
-    <div class="card" style="margin-top:20px;">
-      <div class="card-header"><h3>Domestic EV Sector Key Metrics (Cumulative) · Mar '25 ~ Mar '26</h3><span class="tag ev">EV</span></div>
-      <div class="card-body" style="padding:0; overflow-x:auto;">
-        <table class="tbl" id="evMetricsTable"></table>
-      </div>
-      <div class="source">Source: MOLIT, MOE · (1) Passenger EV Sales / Total Passenger Vehicle Sales; (2) Commercial EV Sales / Total Commercial Vehicle Sales</div>
     </div>
   </section>
 
