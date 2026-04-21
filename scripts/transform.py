@@ -67,36 +67,36 @@ def load_raw(path: Path) -> pd.DataFrame:
     return df
 
 
-def normalize_busiNm(df: pd.DataFrame) -> pd.DataFrame:
-    """busiNm 앞뒤 공백 제거 + 정규화."""
-    df = df.copy()
-    if "busiNm" not in df.columns:
-        raise ValueError("busiNm 컬럼이 없습니다.")
-    df["busiNm"] = df["busiNm"].astype(str).str.strip()
-    return df
-
-
 def apply_operator_mapping(df: pd.DataFrame, mapping: dict) -> pd.DataFrame:
-    """busiNm → 법인명(operator) 매핑 적용."""
-    # 역매핑 테이블 생성: {원본busiNm: 통합법인명}
-    reverse_map = {}
-    for operator, variants in mapping["mapping"].items():
-        for v in variants:
-            reverse_map[v.strip()] = operator
+    """busiId → 법인명(operator) 매핑 적용.
+    busiId는 API 고정값으로 안정적. busiNm은 수기입력이라 사용하지 않음.
+    busiId 미매핑 시 bnm(사업자 공식명) 을 fallback으로 사용.
+    """
+    id_map = {}
+    for operator, busi_ids in mapping["mapping"].items():
+        for bid in busi_ids:
+            id_map[bid.strip()] = operator
 
     df = df.copy()
-    df["operator"] = df["busiNm"].map(reverse_map).fillna(df["busiNm"])
+    if "busiId" not in df.columns:
+        raise ValueError("busiId 컬럼이 없습니다.")
 
-    # 매핑 안 된 주요 업체 로그 (10개 이상인 것만)
-    unmapped = df[~df["busiNm"].isin(reverse_map.keys())]
-    if len(unmapped) > 0:
-        top_unmapped = unmapped["busiNm"].value_counts().head(20)
-        large_unmapped = top_unmapped[top_unmapped >= 10]
+    df["busiId_clean"] = df["busiId"].astype(str).str.strip()
+    bnm_col = df["bnm"].astype(str).str.strip() if "bnm" in df.columns else df["busiId_clean"]
+    df["operator"] = df["busiId_clean"].map(id_map).fillna(bnm_col)
+
+    # 매핑 안 된 busiId 중 100건 이상 로그
+    unmapped_mask = ~df["busiId_clean"].isin(id_map.keys())
+    if unmapped_mask.sum() > 0:
+        top_unmapped = df[unmapped_mask]["busiId_clean"].value_counts().head(20)
+        large_unmapped = top_unmapped[top_unmapped >= 100]
         if len(large_unmapped) > 0:
-            print(f"\n[WARN] 매핑 안 된 busiNm 중 10건 이상인 것 {len(large_unmapped)}개:")
-            for name, cnt in large_unmapped.items():
-                print(f"  - {name}: {cnt:,}")
-            print("→ operator_mapping.json 에 추가를 고려하세요.\n")
+            print(f"\n[WARN] 매핑 안 된 busiId 중 100건 이상인 것 {len(large_unmapped)}개:")
+            for bid, cnt in large_unmapped.items():
+                bnm_sample = df[df["busiId_clean"] == bid]["bnm"].mode()
+                bnm_str = bnm_sample.iloc[0] if len(bnm_sample) > 0 else "?"
+                print(f"  - {bid} ({bnm_str}): {cnt:,}")
+            print("→ operator_mapping.json 에 busiId 추가를 고려하세요.\n")
 
     return df
 
@@ -259,7 +259,6 @@ def main():
     df = load_raw(input_path)
     print(f"원본 행 수: {len(df):,}")
 
-    df = normalize_busiNm(df)
     df = apply_operator_mapping(df, mapping)
     df = determine_charger_type(df)
     df = determine_region(df, mapping)
