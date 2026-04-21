@@ -154,8 +154,21 @@
     letter-spacing: 0.3px;
   }
   .card-header .tag.fast { background: #1a5f3a; }
+  .card-header .tag.ev { background: #0a6e73; }
 
   .card-body { padding: 18px; }
+
+  .section-divider {
+    margin-top: 28px; padding-top: 20px;
+    border-top: 2px solid var(--border);
+    margin-bottom: 16px;
+  }
+  .section-divider .eyebrow {
+    font-size: 11px; font-weight: 700; letter-spacing: 1px;
+    color: #0a6e73; text-transform: uppercase; margin-bottom: 4px;
+  }
+  .section-divider h3 { font-size: 16px; font-weight: 800; letter-spacing: -0.3px; color: var(--text); }
+  .section-divider p { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
 
   .callout {
     background: linear-gradient(135deg, #eaf1ff 0%, #f0f5ff 100%);
@@ -496,6 +509,40 @@
         <div class="card-body"><div class="chart-wrap"><canvas id="chartFastMS"></canvas></div></div>
       </div>
     </div>
+    <!-- EV MARKET SECTION -->
+    <div class="section-divider">
+      <div class="eyebrow">Domestic EV Market</div>
+      <h3>EV Registration & Sales Overview</h3>
+      <p>Source: Ministry of Land, Infrastructure and Transport (MOLIT), Ministry of Environment (MOE) · Jan '21 ~ Mar '26</p>
+    </div>
+
+    <div class="grid-kpi" id="evKpiGrid">
+      <div class="kpi"><div class="label">Total Registered EVs</div><div class="value" id="evKpiTotal">—</div><div class="delta" id="evKpiTotalDelta"></div></div>
+      <div class="kpi"><div class="label">Passenger EVs</div><div class="value" id="evKpiPass">—</div><div class="delta up" id="evKpiPassSub" style="font-size:10.5px;color:var(--text-muted)"></div></div>
+      <div class="kpi"><div class="label">EV Penetration Rate</div><div class="value" id="evKpiPen">—</div><div class="delta" id="evKpiPenDelta"></div></div>
+      <div class="kpi"><div class="label">Monthly EV Sales (Latest)</div><div class="value" id="evKpiSales">—</div><div class="delta" id="evKpiSalesDelta"></div></div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header"><h3>Cumulative Registered EVs & Penetration Rate</h3><span class="tag ev">EV</span></div>
+        <div class="card-body"><div class="chart-wrap"><canvas id="chartEvRegistered"></canvas></div></div>
+        <div class="source">Source: MOLIT · Jan '21 ~ Mar '26</div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>Monthly EV Sales & EV Sales Share</h3><span class="tag ev">Sales</span></div>
+        <div class="card-body"><div class="chart-wrap"><canvas id="chartEvSales"></canvas></div></div>
+        <div class="source">Source: MOLIT · LTM Domestic EV Sales · Aug '22 ~ Mar '26</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+      <div class="card-header"><h3>Domestic EV Sector Key Metrics (Cumulative) · Mar '25 ~ Mar '26</h3><span class="tag ev">EV</span></div>
+      <div class="card-body" style="padding:0; overflow-x:auto;">
+        <table class="tbl" id="evMetricsTable"></table>
+      </div>
+      <div class="source">Source: MOLIT, MOE · (1) Passenger EV Sales / Total Passenger Vehicle Sales; (2) Commercial EV Sales / Total Commercial Vehicle Sales</div>
+    </div>
   </section>
 
   <!-- TAB 2: SLOW -->
@@ -771,6 +818,7 @@ function render(data) {
   renderFastTrend(fastMonths, data.fast_trend || {});
   renderConcentration(months, data.concentration || {});
   renderMarketShare(months, data.market_share || {});
+  if (data.ev_market) renderEvMarket(data.ev_market);
 }
 
 function renderOverview(ov) {
@@ -1242,6 +1290,126 @@ function renderMarketShare(months, ms) {
       }
     }
   });
+}
+
+function renderEvMarket(ev) {
+  const lastIdx = ev.ev_months.length - 1;
+  const prevIdx = lastIdx - 1;
+
+  const totalLast = Math.round(ev.ev_total_K[lastIdx] * 1000);
+  const totalPrev = Math.round(ev.ev_total_K[prevIdx] * 1000);
+  const passLast  = Math.round(ev.ev_passenger_K[lastIdx] * 1000);
+  const commLast  = Math.round(ev.ev_commercial_K[lastIdx] * 1000);
+  const penLast   = ev.ev_total_penetration_pct[lastIdx];
+  const penPrev   = ev.ev_total_penetration_pct[prevIdx];
+  const salesArr  = ev.ev_sales_total;
+  const salesLast = salesArr[salesArr.length - 1];
+  const salesPrev = salesArr[salesArr.length - 2];
+  const latestMonth = ev.ev_months[lastIdx];
+
+  // KPI cards
+  const kpiTotal = document.getElementById('evKpiTotal');
+  if (kpiTotal) kpiTotal.innerHTML = `${totalLast.toLocaleString()}<span class="unit">대</span>`;
+  const kpiTotalDelta = document.getElementById('evKpiTotalDelta');
+  if (kpiTotalDelta) {
+    const d = totalLast - totalPrev;
+    kpiTotalDelta.textContent = `${d>=0?'▲ +':'▽ '}${d.toLocaleString()} vs ${ev.ev_months[prevIdx]}`;
+    kpiTotalDelta.className = 'delta ' + (d >= 0 ? 'up' : 'down');
+  }
+  const kpiPass = document.getElementById('evKpiPass');
+  if (kpiPass) kpiPass.innerHTML = `${passLast.toLocaleString()}<span class="unit">대</span>`;
+  const kpiPassSub = document.getElementById('evKpiPassSub');
+  if (kpiPassSub) kpiPassSub.textContent = `Commercial: ${commLast.toLocaleString()}대`;
+
+  const kpiPen = document.getElementById('evKpiPen');
+  if (kpiPen) kpiPen.innerHTML = `${penLast}<span class="unit">%</span>`;
+  const kpiPenDelta = document.getElementById('evKpiPenDelta');
+  if (kpiPenDelta && penPrev != null) {
+    const d = +(penLast - penPrev).toFixed(1);
+    kpiPenDelta.textContent = `${d>=0?'▲ +':'▽ '}${d}%p vs ${ev.ev_months[prevIdx]}`;
+    kpiPenDelta.className = 'delta ' + (d >= 0 ? 'up' : 'down');
+  }
+  const kpiSales = document.getElementById('evKpiSales');
+  if (kpiSales) kpiSales.innerHTML = `${salesLast.toLocaleString()}<span class="unit">대</span>`;
+  const kpiSalesDelta = document.getElementById('evKpiSalesDelta');
+  if (kpiSalesDelta) {
+    const d = salesLast - salesPrev;
+    kpiSalesDelta.textContent = `${d>=0?'▲ +':'▽ '}${d.toLocaleString()} vs ${ev.ev_sales_months[ev.ev_sales_months.length-2]}`;
+    kpiSalesDelta.className = 'delta ' + (d >= 0 ? 'up' : 'down');
+  }
+
+  // Chart: Registered EVs (stacked area) + total penetration line
+  new Chart(document.getElementById('chartEvRegistered'), {
+    type: 'bar',
+    data: {
+      labels: ev.ev_months,
+      datasets: [
+        { label: 'Passenger EV (\'000)', data: ev.ev_passenger_K, backgroundColor: '#1a2b5c', borderRadius: 0, yAxisID: 'y', order: 2, barThickness: 'flex' },
+        { label: 'Commercial EV (\'000)', data: ev.ev_commercial_K, backgroundColor: '#3a8bd6', borderRadius: 0, yAxisID: 'y', order: 2, barThickness: 'flex' },
+        { type: 'line', label: 'EV Penetration Rate (%)', data: ev.ev_total_penetration_pct,
+          borderColor: '#e4002b', backgroundColor: 'transparent', borderWidth: 2,
+          pointRadius: 0, pointHoverRadius: 4, tension: 0.3, yAxisID: 'y1', order: 1,
+          datalabels: { display: false } }
+      ]
+    },
+    options: {
+      maintainAspectRatio: false,
+      plugins: { legend: { position: 'top', align: 'start' }, datalabels: { display: false } },
+      scales: {
+        x: { stacked: true, grid: { display: false }, ticks: { maxRotation: 45, minRotation: 45, font: { size: 8.5 }, autoSkip: true, maxTicksLimit: 16 } },
+        y: { stacked: true, beginAtZero: true, grid: { color: '#f0f2f7' }, ticks: { callback: v => v + 'K' } },
+        y1: { position: 'right', min: 0, max: 12, grid: { display: false }, ticks: { callback: v => v + '%' } }
+      }
+    }
+  });
+
+  // Chart: Monthly EV Sales (stacked bar) + EV Sales Share line
+  new Chart(document.getElementById('chartEvSales'), {
+    type: 'bar',
+    data: {
+      labels: ev.ev_sales_months,
+      datasets: [
+        { label: 'Passenger EV Sales', data: ev.ev_sales_passenger, backgroundColor: '#1a2b5c', borderRadius: 0, yAxisID: 'y', order: 2 },
+        { label: 'Commercial EV Sales', data: ev.ev_sales_commercial, backgroundColor: '#3a8bd6', borderRadius: 0, yAxisID: 'y', order: 2 },
+        { type: 'line', label: 'EV Sales Share (%)', data: ev.ev_sales_share_pct,
+          borderColor: '#e4002b', backgroundColor: 'transparent', borderWidth: 2,
+          pointRadius: 0, pointHoverRadius: 4, tension: 0.3, yAxisID: 'y1', order: 1,
+          datalabels: { display: false } }
+      ]
+    },
+    options: {
+      maintainAspectRatio: false,
+      plugins: { legend: { position: 'top', align: 'start' }, datalabels: { display: false } },
+      scales: {
+        x: { stacked: true, grid: { display: false }, ticks: { maxRotation: 45, minRotation: 45, font: { size: 8.5 }, autoSkip: true, maxTicksLimit: 16 } },
+        y: { stacked: true, beginAtZero: true, grid: { color: '#f0f2f7' }, ticks: { callback: v => v.toLocaleString() } },
+        y1: { position: 'right', min: 0, max: 35, grid: { display: false }, ticks: { callback: v => v + '%' } }
+      }
+    }
+  });
+
+  // Key Metrics Table (last 13 months: Mar-25 ~ Mar-26)
+  const tableEl = document.getElementById('evMetricsTable');
+  if (!tableEl) return;
+  const N = ev.ev_months.length;
+  const START = Math.max(0, N - 13);
+  const tableMonths = ev.ev_months.slice(START);
+  const headerCells = tableMonths.map(m => `<th class="right" style="white-space:nowrap">${m}</th>`).join('');
+  const fmt  = (arr, i) => arr[START + i] != null ? Math.round(arr[START + i] * 1000).toLocaleString() : '—';
+  const fmtP = (arr, i) => arr[START + i] != null ? arr[START + i].toFixed(1) + '%' : '—';
+  const row = (label, arr, formatter) =>
+    `<tr><td style="white-space:nowrap;font-weight:600">${label}</td>${tableMonths.map((_,i)=>`<td class="right">${formatter(arr,i)}</td>`).join('')}</tr>`;
+
+  tableEl.innerHTML = `
+    <thead><tr><th style="min-width:180px"></th>${headerCells}</tr></thead>
+    <tbody>
+      ${row('Cumulative # of Registered EVs', ev.ev_total_K, fmt)}
+      ${row('Passenger EV', ev.ev_passenger_K, fmt)}
+      ${row('Commercial EV', ev.ev_commercial_K, fmt)}
+      <tr class="ms-row"><td style="white-space:nowrap">EV Penetration Rate</td>${tableMonths.map((_,i)=>`<td class="right">${fmtP(ev.ev_total_penetration_pct, i)}</td>`).join('')}</tr>
+      <tr><td style="white-space:nowrap;padding-left:20px;color:var(--text-muted)">ㄴ Passenger EV ①</td>${tableMonths.map((_,i)=>`<td class="right" style="color:var(--text-muted)">${fmtP(ev.ev_passenger_penetration_pct, i)}</td>`).join('')}</tr>
+      <tr><td style="white-space:nowrap;padding-left:20px;color:var(--text-muted)">ㄴ Commercial EV ②</td>${tableMonths.map((_,i)=>`<td class="right" style="color:var(--text-muted)">${fmtP(ev.ev_commercial_penetration_pct, i)}</td>`).join('')}</tr>
+    </tbody>`;
 }
 
 // ============================================================================
