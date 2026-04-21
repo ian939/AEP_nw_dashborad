@@ -33,6 +33,11 @@ jobs:
           MOE_API_KEY: ${{ secrets.MOE_API_KEY }}
         run: python scripts/fetch_api.py
 
+      - name: Fetch EV registration data
+        env:
+          EV_REG_API_KEY: ${{ secrets.EV_REG_API_KEY }}
+        run: python scripts/fetch_ev_registration.py
+
       - name: Transform raw → monthly snapshot
         run: python scripts/transform.py
 

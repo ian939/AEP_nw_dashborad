@@ -25,6 +25,7 @@ MONTHLY_DIR = REPO_ROOT / "data" / "monthly"
 HISTORICAL_FILE = REPO_ROOT / "data" / "historical.json"
 MAPPING_FILE = REPO_ROOT / "data" / "operator_mapping.json"
 OUTPUT_FILE = REPO_ROOT / "data" / "dashboard-data.json"
+EV_REG_DIR = REPO_ROOT / "data" / "ev_registration"
 
 # 대시보드 표시명 (operator_mapping 한국어 키 → 대시보드 영문 표시명)
 DISPLAY_NAMES = {
@@ -115,12 +116,26 @@ def merge_into_dashboard(historical: dict, snapshots: list) -> dict:
                 result["market_share"].setdefault(op, {"GSMA": [], "GSMA_plus_metro": []})
                 result["market_share"][op][region_key].append(data["ms_pct"])
 
-        # 총계 등록 (EV per port는 API에서 수집 불가 → None으로 처리 후 보간)
+        # EV 신규등록 데이터로 차충비(EVs/port) 계산
+        ev_reg_file = EV_REG_DIR / f"{ym}.json"
+        slow_ev = fast_ev = None
+        if ev_reg_file.exists():
+            ev_reg = json.loads(ev_reg_file.read_text(encoding="utf-8"))
+            cum_ev = ev_reg["cumulative"]["total_ev"]
+            slow_total = snap["slow"]["total"]
+            fast_total = snap["fast"]["total"]
+            slow_ev = round(cum_ev / slow_total, 2) if slow_total > 0 else None
+            fast_ev = round(cum_ev / fast_total, 2) if fast_total > 0 else None
+            print(f"  [ev_reg] {ym} 누적EV={cum_ev:,} slow_ev={slow_ev} fast_ev={fast_ev}")
+
+            # ev_market 배열 업데이트
+            result = _append_ev_market(result, label, ym, ev_reg, snap)
+
         month_totals[label] = {
             "slow_K": round(snap["slow"]["total"] / 1000, 1),
             "fast_K": round(snap["fast"]["total"] / 1000, 1),
-            "slow_ev": None,
-            "fast_ev": None,
+            "slow_ev": slow_ev,
+            "fast_ev": fast_ev,
         }
 
         print(f"  [append] {label}")
@@ -157,6 +172,77 @@ def merge_into_dashboard(historical: dict, snapshots: list) -> dict:
         "new_months_added": len(snapshots),
     }
 
+    return result
+
+
+def _append_ev_market(result: dict, label: str, ym: str,
+                       ev_reg: dict, snap: dict) -> dict:
+    """ev_market 배열에 신규 월 데이터 추가."""
+    ev = result.get("ev_market")
+    if ev is None:
+        return result
+
+    # 중복 방지
+    if label in ev.get("ev_months", []):
+        return result
+
+    cum = ev_reg["cumulative"]
+    monthly = ev_reg["monthly_new"]
+
+    pass_K  = round(cum["passenger_ev"]  / 1000, 3)
+    comm_K  = round(cum["commercial_ev"] / 1000, 3)
+    total_K = round(cum["total_ev"]      / 1000, 3)
+
+    ev["ev_months"].append(label)
+    ev["ev_passenger_K"].append(pass_K)
+    ev["ev_commercial_K"].append(comm_K)
+    ev["ev_total_K"].append(total_K)
+    ev["ev_total_penetration_pct"].append(None)      # 차량 누적 없어 계산 불가
+    ev["ev_passenger_penetration_pct"].append(None)
+    ev["ev_commercial_penetration_pct"].append(None)
+
+    # 월간 판매 (신규등록)
+    ev_sales_label = f"{label}"  # ex) Apr-26
+    if ev_sales_label not in ev.get("ev_sales_months", []):
+        total_veh    = monthly.get("total_vehicles", 0)
+        total_ev_mo  = monthly.get("total_ev", 0)
+        pass_ev_mo   = monthly.get("passenger_ev", 0)
+        comm_ev_mo   = monthly.get("commercial_ev", 0)
+        other_mo     = total_veh - total_ev_mo if total_veh else None
+        share_pct    = round(total_ev_mo / total_veh * 100, 2) if total_veh else None
+
+        ev["ev_sales_months"].append(ev_sales_label)
+        ev["ev_sales_passenger"].append(pass_ev_mo)
+        ev["ev_sales_commercial"].append(comm_ev_mo)
+        ev["ev_sales_total"].append(total_ev_mo)
+        ev["ev_sales_other"].append(other_mo)
+        ev["ev_sales_total_vehicles"].append(total_veh)
+        ev["ev_sales_share_pct"].append(share_pct)
+        # 승용/상용 개별 비중: 직전 보간(None 허용)
+        ev["ev_sales_passenger_share_pct"].append(
+            round(pass_ev_mo / total_veh * 100, 2) if total_veh else None
+        )
+        ev["ev_sales_commercial_share_pct"].append(
+            round(comm_ev_mo / total_veh * 100, 2) if total_veh else None
+        )
+
+    # ev_table_precise: 마지막 13개월 재계산
+    months_13 = ev["ev_months"][-13:]
+    precise_months = ev.get("ev_table_precise", {}).get("months", [])
+    for m in months_13:
+        if m not in precise_months:
+            idx = ev["ev_months"].index(m)
+            ev.setdefault("ev_table_precise", {"months":[], "total":[], "passenger":[], "commercial":[]})
+            ev["ev_table_precise"]["months"].append(m)
+            ev["ev_table_precise"]["total"].append(round(ev["ev_total_K"][idx] * 1000))
+            ev["ev_table_precise"]["passenger"].append(round(ev["ev_passenger_K"][idx] * 1000))
+            ev["ev_table_precise"]["commercial"].append(round(ev["ev_commercial_K"][idx] * 1000))
+    # 최근 13개월만 유지
+    for key in ["months", "total", "passenger", "commercial"]:
+        ev["ev_table_precise"][key] = ev["ev_table_precise"][key][-13:]
+
+    result["ev_market"] = ev
+    print(f"  [ev_market] {label} 추가 완료 (누적EV {total_K}K)")
     return result
 
 
