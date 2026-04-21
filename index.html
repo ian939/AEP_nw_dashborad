@@ -474,25 +474,25 @@
   <!-- TAB 1: OVERVIEW -->
   <section class="tab-panel" id="tab-overview">
     <div class="grid-kpi">
-      <div class="kpi">
+      <div class="kpi" id="nwKpi0">
         <div class="label">Total Slow Charging Ports</div>
-        <div class="value">436,899<span class="unit">개</span></div>
-        <div class="delta up">▲ +9,565 vs Jan-26</div>
+        <div class="value">—</div>
+        <div class="delta">—</div>
       </div>
-      <div class="kpi">
+      <div class="kpi" id="nwKpi1">
         <div class="label">Total Fast Charging Ports</div>
-        <div class="value">51,110<span class="unit">개</span></div>
-        <div class="delta down">▽ -93 vs Jan-26</div>
+        <div class="value">—</div>
+        <div class="delta">—</div>
       </div>
-      <div class="kpi">
+      <div class="kpi" id="nwKpi2">
         <div class="label">Slow · Top 5 M/S</div>
-        <div class="value">56.8<span class="unit">%</span></div>
-        <div class="delta down">▽ -0.3%p vs Jan-26</div>
+        <div class="value">—</div>
+        <div class="delta">—</div>
       </div>
-      <div class="kpi">
+      <div class="kpi" id="nwKpi3">
         <div class="label">Fast · Top 5 M/S</div>
-        <div class="value">34.9<span class="unit">%</span></div>
-        <div class="delta up">▲ +0.2%p vs Jan-26</div>
+        <div class="value">—</div>
+        <div class="delta">—</div>
       </div>
     </div>
 
@@ -917,9 +917,9 @@ function renderMSLine(canvasId, months, dataObj, yMin, yMax) {
 }
 
 function updateKPIs(k) {
-  const kpis = document.querySelectorAll('.kpi');
-  if (kpis.length < 4) return;
-  const set = (el, val, deltaText, deltaUp) => {
+  const set = (id, val, deltaText, deltaUp) => {
+    const el = document.getElementById(id);
+    if (!el) return;
     el.querySelector('.value').innerHTML = val;
     const d = el.querySelector('.delta');
     d.textContent = deltaText;
@@ -930,13 +930,13 @@ function updateKPIs(k) {
   const sMSDelta = +(k.slowMS - k.slowMSPrev).toFixed(1);
   const fMSDelta = +(k.fastMS - k.fastMSPrev).toFixed(1);
 
-  set(kpis[0], `${k.slowLatest.toLocaleString()}<span class="unit">개</span>`,
+  set('nwKpi0', `${k.slowLatest.toLocaleString()}<span class="unit">개</span>`,
       `${sDelta >= 0 ? '▲ +' : '▽ '}${sDelta.toLocaleString()} vs ${k.prevLabel}`, sDelta >= 0);
-  set(kpis[1], `${k.fastLatest.toLocaleString()}<span class="unit">개</span>`,
+  set('nwKpi1', `${k.fastLatest.toLocaleString()}<span class="unit">개</span>`,
       `${fDelta >= 0 ? '▲ +' : '▽ '}${fDelta.toLocaleString()} vs ${k.prevLabel}`, fDelta >= 0);
-  set(kpis[2], `${k.slowMS.toFixed(1)}<span class="unit">%</span>`,
+  set('nwKpi2', `${k.slowMS.toFixed(1)}<span class="unit">%</span>`,
       `${sMSDelta >= 0 ? '▲ +' : '▽ '}${sMSDelta}%p vs ${k.prevLabel}`, sMSDelta >= 0);
-  set(kpis[3], `${k.fastMS.toFixed(1)}<span class="unit">%</span>`,
+  set('nwKpi3', `${k.fastMS.toFixed(1)}<span class="unit">%</span>`,
       `${fMSDelta >= 0 ? '▲ +' : '▽ '}${fMSDelta}%p vs ${k.prevLabel}`, fMSDelta >= 0);
 }
 
