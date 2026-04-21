@@ -1047,7 +1047,7 @@ function renderChips(containerId, datasets, chart) {
 }
 
 function renderConcentration(months, conc) {
-  const ops = Object.keys(conc).filter(k => !k.startsWith('_'));
+  const ops = ['채비', 'SK일렉링크', '이브이시스'].filter(k => conc[k]);
 
   // GSMA
   new Chart(document.getElementById('chartConcGSMA'), {
@@ -1146,7 +1146,7 @@ function renderConcentration(months, conc) {
 }
 
 function renderMarketShare(months, ms) {
-  const ops = Object.keys(ms).filter(k => !k.startsWith('_'));
+  const ops = ['채비', 'SK일렉링크', '이브이시스'].filter(k => ms[k]);
 
   new Chart(document.getElementById('chartMSGSMA'), {
     type: 'line',
