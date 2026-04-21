@@ -164,6 +164,8 @@ def build_overview_5month(result: dict, month_totals: dict,
                           slow_tracked: list, fast_tracked: list) -> dict:
     """최신 5개월 데이터로 overview_5month 재계산."""
     all_months = result["months"]
+    # fast_trend는 months_fast_extended 기준 인덱싱 (slow months보다 12개월 앞서 시작)
+    fast_months = result.get("months_fast_extended", all_months)
     last_5 = all_months[-5:]
 
     slow_table  = {DISPLAY_NAMES.get(op, op): [] for op in slow_tracked}
@@ -178,7 +180,8 @@ def build_overview_5month(result: dict, month_totals: dict,
     fast_ms_pct  = []
 
     for m in last_5:
-        idx = all_months.index(m)
+        slow_idx = all_months.index(m)
+        fast_idx = fast_months.index(m) if m in fast_months else -1
         mt = month_totals.get(m, {})
         s_K = mt.get("slow_K") or 0
         f_K = mt.get("fast_K") or 0
@@ -191,7 +194,7 @@ def build_overview_5month(result: dict, month_totals: dict,
         for op in slow_tracked:
             disp = DISPLAY_NAMES.get(op, op)
             trend = result["slow_trend"].get(op, [])
-            count = int(trend[idx]) if idx < len(trend) and trend[idx] is not None else 0
+            count = int(trend[slow_idx]) if slow_idx < len(trend) and trend[slow_idx] is not None else 0
             slow_table[disp].append(count)
             ms = round(count / (s_K * 1000) * 100, 1) if s_K > 0 else 0
             slow_ms_line[disp].append(ms)
@@ -202,7 +205,7 @@ def build_overview_5month(result: dict, month_totals: dict,
         for op in fast_tracked:
             disp = DISPLAY_NAMES.get(op, op)
             trend = result["fast_trend"].get(op, [])
-            count = int(trend[idx]) if idx < len(trend) and trend[idx] is not None else 0
+            count = int(trend[fast_idx]) if fast_idx >= 0 and fast_idx < len(trend) and trend[fast_idx] is not None else 0
             fast_table[disp].append(count)
             ms = round(count / (f_K * 1000) * 100, 1) if f_K > 0 else 0
             fast_ms_line[disp].append(ms)
