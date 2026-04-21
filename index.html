@@ -445,15 +445,21 @@
 
     <div class="grid-2" style="margin-top:20px;">
       <div class="card">
-        <div class="card-header"><h3>Cumulative Registered EVs & Penetration Rate</h3><span class="tag ev">EV</span></div>
-        <div class="card-body"><div class="chart-wrap"><canvas id="chartEvRegistered"></canvas></div></div>
-        <div class="source">Source: MOLIT · Jan '21 ~ Mar '26</div>
+        <div class="card-header"><h3>Number of Registered Passenger EVs / Penetration % Trend</h3><span class="tag ev">EV</span></div>
+        <div class="card-body"><div class="chart-wrap" style="height:300px"><canvas id="chartPassengerEV"></canvas></div></div>
+        <div class="source">Source: MOLIT · Nov '24 ~ Mar '26</div>
       </div>
       <div class="card">
-        <div class="card-header"><h3>Monthly EV Sales & EV Sales Share</h3><span class="tag ev">Sales</span></div>
-        <div class="card-body"><div class="chart-wrap"><canvas id="chartEvSales"></canvas></div></div>
-        <div class="source">Source: MOLIT · LTM Domestic EV Sales · Aug '22 ~ Mar '26</div>
+        <div class="card-header"><h3>Number of Registered Commercial EVs / Penetration % Trend</h3><span class="tag ev">EV</span></div>
+        <div class="card-body"><div class="chart-wrap" style="height:300px"><canvas id="chartCommercialEV"></canvas></div></div>
+        <div class="source">Source: MOLIT · Nov '24 ~ Mar '26</div>
       </div>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+      <div class="card-header"><h3>LTM Domestic EV Sales Trend</h3><span class="tag ev">Sales</span></div>
+      <div class="card-body"><div class="chart-wrap" style="height:380px"><canvas id="chartEvSales"></canvas></div></div>
+      <div class="source">Source: MOLIT, MOE · (1) Passenger EV Sales / Total Passenger Vehicle Sales; (2) Commercial EV Sales / Total Commercial Vehicle Sales · Mar '25 ~ Mar '26</div>
     </div>
 
     <div class="card" style="margin-top:20px;">
@@ -1293,19 +1299,19 @@ function renderMarketShare(months, ms) {
 function renderEvMarket(ev) {
   const lastIdx = ev.ev_months.length - 1;
   const prevIdx = lastIdx - 1;
+  const precise = ev.ev_table_precise;
 
-  const totalLast = Math.round(ev.ev_total_K[lastIdx] * 1000);
-  const totalPrev = Math.round(ev.ev_total_K[prevIdx] * 1000);
-  const passLast  = Math.round(ev.ev_passenger_K[lastIdx] * 1000);
-  const commLast  = Math.round(ev.ev_commercial_K[lastIdx] * 1000);
+  // KPI: 정밀값 사용
+  const totalLast = precise.total[precise.total.length - 1];
+  const totalPrev = precise.total[precise.total.length - 2];
+  const passLast  = precise.passenger[precise.passenger.length - 1];
+  const commLast  = precise.commercial[precise.commercial.length - 1];
   const penLast   = ev.ev_total_penetration_pct[lastIdx];
   const penPrev   = ev.ev_total_penetration_pct[prevIdx];
   const salesArr  = ev.ev_sales_total;
   const salesLast = salesArr[salesArr.length - 1];
   const salesPrev = salesArr[salesArr.length - 2];
-  const latestMonth = ev.ev_months[lastIdx];
 
-  // KPI cards
   const kpiTotal = document.getElementById('evKpiTotal');
   if (kpiTotal) kpiTotal.innerHTML = `${totalLast.toLocaleString()}<span class="unit">대</span>`;
   const kpiTotalDelta = document.getElementById('evKpiTotalDelta');
@@ -1318,7 +1324,6 @@ function renderEvMarket(ev) {
   if (kpiPass) kpiPass.innerHTML = `${passLast.toLocaleString()}<span class="unit">대</span>`;
   const kpiPassSub = document.getElementById('evKpiPassSub');
   if (kpiPassSub) kpiPassSub.textContent = `Commercial: ${commLast.toLocaleString()}대`;
-
   const kpiPen = document.getElementById('evKpiPen');
   if (kpiPen) kpiPen.innerHTML = `${penLast}<span class="unit">%</span>`;
   const kpiPenDelta = document.getElementById('evKpiPenDelta');
@@ -1336,77 +1341,157 @@ function renderEvMarket(ev) {
     kpiSalesDelta.className = 'delta ' + (d >= 0 ? 'up' : 'down');
   }
 
-  // Chart: Registered EVs (stacked area) + total penetration line
-  new Chart(document.getElementById('chartEvRegistered'), {
-    type: 'bar',
-    data: {
-      labels: ev.ev_months,
-      datasets: [
-        { label: 'Passenger EV (\'000)', data: ev.ev_passenger_K, backgroundColor: '#1a2b5c', borderRadius: 0, yAxisID: 'y', order: 2, barThickness: 'flex' },
-        { label: 'Commercial EV (\'000)', data: ev.ev_commercial_K, backgroundColor: '#3a8bd6', borderRadius: 0, yAxisID: 'y', order: 2, barThickness: 'flex' },
-        { type: 'line', label: 'EV Penetration Rate (%)', data: ev.ev_total_penetration_pct,
-          borderColor: '#e4002b', backgroundColor: 'transparent', borderWidth: 2,
-          pointRadius: 0, pointHoverRadius: 4, tension: 0.3, yAxisID: 'y1', order: 1,
-          datalabels: { display: false } }
-      ]
+  // 마지막 17개월 슬라이스 (Nov-24 ~ Mar-26, index 46~62)
+  const WIN = 17;
+  const winStart = ev.ev_months.length - WIN;
+  const winMonths   = ev.ev_months.slice(winStart);
+  const winPassK    = ev.ev_passenger_K.slice(winStart);
+  const winCommK    = ev.ev_commercial_K.slice(winStart);
+  const winPassPen  = ev.ev_passenger_penetration_pct.slice(winStart);
+  const winCommPen  = ev.ev_commercial_penetration_pct.slice(winStart);
+
+  const lineDatalabelOpts = (color) => ({
+    display: true, anchor: 'end', align: 'top', offset: 2,
+    color, font: { size: 9.5, weight: 'bold' },
+    formatter: v => v != null ? v.toFixed(1) + '%' : ''
+  });
+
+  const barDatalabelOpts = (color) => ({
+    display: true, anchor: 'center', align: 'center',
+    color, font: { size: 9, weight: 'bold' },
+    formatter: v => v != null ? Math.round(v) : ''
+  });
+
+  const evRegOptions = (yMax, y1Min, y1Max, penColor) => ({
+    maintainAspectRatio: false,
+    layout: { padding: { top: 20 } },
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { position: 'top', align: 'start' },
+      datalabels: { display: false }
     },
-    options: {
-      maintainAspectRatio: false,
-      plugins: { legend: { position: 'top', align: 'start' }, datalabels: { display: false } },
-      scales: {
-        x: { stacked: true, grid: { display: false }, ticks: { maxRotation: 45, minRotation: 45, font: { size: 8.5 }, autoSkip: true, maxTicksLimit: 16 } },
-        y: { stacked: true, beginAtZero: true, grid: { color: '#f0f2f7' }, ticks: { callback: v => v + 'K' } },
-        y1: { position: 'right', min: 0, max: 12, grid: { display: false }, ticks: { callback: v => v + '%' } }
-      }
+    scales: {
+      x: { grid: { display: false }, ticks: { maxRotation: 45, minRotation: 45, font: { size: 9 } } },
+      y: { beginAtZero: true, max: yMax, grid: { color: '#f0f2f7' }, ticks: { callback: v => v + 'K' } },
+      y1: { position: 'right', min: y1Min, max: y1Max, grid: { display: false }, ticks: { callback: v => v + '%' } }
     }
   });
 
-  // Chart: Monthly EV Sales (stacked bar) + EV Sales Share line
+  // Chart 1: Passenger EV
+  new Chart(document.getElementById('chartPassengerEV'), {
+    type: 'bar',
+    data: {
+      labels: winMonths,
+      datasets: [
+        { label: 'Passenger EV (\'000)', data: winPassK, backgroundColor: '#1a2b5c',
+          yAxisID: 'y', order: 2, datalabels: barDatalabelOpts('#fff') },
+        { type: 'line', label: 'Passenger EV Penetration (%)', data: winPassPen,
+          borderColor: '#e4002b', backgroundColor: 'transparent', borderWidth: 2,
+          pointRadius: 4, pointBackgroundColor: '#fff', pointBorderColor: '#e4002b', pointBorderWidth: 2,
+          tension: 0.2, yAxisID: 'y1', order: 1, datalabels: lineDatalabelOpts('#e4002b') }
+      ]
+    },
+    options: evRegOptions(900, 0, 4, '#e4002b')
+  });
+
+  // Chart 2: Commercial EV
+  new Chart(document.getElementById('chartCommercialEV'), {
+    type: 'bar',
+    data: {
+      labels: winMonths,
+      datasets: [
+        { label: 'Commercial EV (\'000)', data: winCommK, backgroundColor: '#3a8bd6',
+          yAxisID: 'y', order: 2, datalabels: barDatalabelOpts('#fff') },
+        { type: 'line', label: 'Commercial EV Penetration (%)', data: winCommPen,
+          borderColor: '#e4002b', backgroundColor: 'transparent', borderWidth: 2,
+          pointRadius: 4, pointBackgroundColor: '#fff', pointBorderColor: '#e4002b', pointBorderWidth: 2,
+          tension: 0.2, yAxisID: 'y1', order: 1, datalabels: lineDatalabelOpts('#e4002b') }
+      ]
+    },
+    options: evRegOptions(200, 6, 10, '#e4002b')
+  });
+
+  // Chart 3: LTM Sales (마지막 13개월: Mar-25~Mar-26)
+  const sWIN = 13;
+  const sStart = ev.ev_sales_months.length - sWIN;
+  const sMonths  = ev.ev_sales_months.slice(sStart);
+  const sPass    = ev.ev_sales_passenger.slice(sStart);
+  const sComm    = ev.ev_sales_commercial.slice(sStart);
+  const sOther   = ev.ev_sales_other.slice(sStart);
+  const sTotal   = ev.ev_sales_share_pct.slice(sStart);
+  const sPassSh  = ev.ev_sales_passenger_share_pct.slice(sStart);
+  const sCommSh  = ev.ev_sales_commercial_share_pct.slice(sStart);
+
+  const lineOpts = (color) => ({
+    display: true, anchor: 'end', align: 'top', offset: 1,
+    color, font: { size: 9, weight: 'bold' },
+    formatter: v => v != null ? v.toFixed(1) + '%' : ''
+  });
+
   new Chart(document.getElementById('chartEvSales'), {
     type: 'bar',
     data: {
-      labels: ev.ev_sales_months,
+      labels: sMonths,
       datasets: [
-        { label: 'Passenger EV Sales', data: ev.ev_sales_passenger, backgroundColor: '#1a2b5c', borderRadius: 0, yAxisID: 'y', order: 2 },
-        { label: 'Commercial EV Sales', data: ev.ev_sales_commercial, backgroundColor: '#3a8bd6', borderRadius: 0, yAxisID: 'y', order: 2 },
-        { type: 'line', label: 'EV Sales Share (%)', data: ev.ev_sales_share_pct,
+        { label: 'Passenger EV Sales', data: sPass, backgroundColor: '#1a2b5c', yAxisID: 'y', order: 2,
+          datalabels: { display: true, anchor: 'center', align: 'center', color: '#fff', font: { size: 8.5, weight: 'bold' }, formatter: v => v != null ? v.toLocaleString() : '' } },
+        { label: 'Commercial EV Sales', data: sComm, backgroundColor: '#f59e0b', yAxisID: 'y', order: 2,
+          datalabels: { display: true, anchor: 'center', align: 'center', color: '#fff', font: { size: 8.5, weight: 'bold' }, formatter: v => v != null ? v.toLocaleString() : '' } },
+        { label: 'Other Vehicles', data: sOther, backgroundColor: '#d1d5db', yAxisID: 'y', order: 2,
+          datalabels: { display: true, anchor: 'center', align: 'center', color: '#374151', font: { size: 8.5, weight: 'bold' }, formatter: v => v != null ? v.toLocaleString() : '' } },
+        { type: 'line', label: 'EV Sales Share (%)', data: sTotal,
           borderColor: '#e4002b', backgroundColor: 'transparent', borderWidth: 2,
-          pointRadius: 0, pointHoverRadius: 4, tension: 0.3, yAxisID: 'y1', order: 1,
-          datalabels: { display: false } }
+          pointRadius: 4, pointBackgroundColor: '#fff', pointBorderColor: '#e4002b', pointBorderWidth: 2,
+          tension: 0.2, yAxisID: 'y1', order: 1, datalabels: lineOpts('#e4002b') },
+        { type: 'line', label: 'Passenger EV Sales Share ①', data: sPassSh,
+          borderColor: '#3a8bd6', backgroundColor: 'transparent', borderWidth: 2,
+          pointRadius: 4, pointBackgroundColor: '#fff', pointBorderColor: '#3a8bd6', pointBorderWidth: 2,
+          tension: 0.2, yAxisID: 'y1', order: 1, datalabels: lineOpts('#3a8bd6') },
+        { type: 'line', label: 'Commercial EV Sales Share ②', data: sCommSh,
+          borderColor: '#f59e0b', backgroundColor: 'transparent', borderWidth: 2,
+          pointRadius: 4, pointBackgroundColor: '#fff', pointBorderColor: '#f59e0b', pointBorderWidth: 2,
+          tension: 0.2, yAxisID: 'y1', order: 1, datalabels: lineOpts('#f59e0b') }
       ]
     },
     options: {
       maintainAspectRatio: false,
-      plugins: { legend: { position: 'top', align: 'start' }, datalabels: { display: false } },
+      layout: { padding: { top: 28 } },
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { position: 'top', align: 'start' },
+        datalabels: { display: false }
+      },
       scales: {
-        x: { stacked: true, grid: { display: false }, ticks: { maxRotation: 45, minRotation: 45, font: { size: 8.5 }, autoSkip: true, maxTicksLimit: 16 } },
-        y: { stacked: true, beginAtZero: true, grid: { color: '#f0f2f7' }, ticks: { callback: v => v.toLocaleString() } },
+        x: { stacked: true, grid: { display: false }, ticks: { maxRotation: 45, minRotation: 45, font: { size: 9 } } },
+        y: { stacked: true, beginAtZero: true, max: 200000, grid: { color: '#f0f2f7' }, ticks: { callback: v => v.toLocaleString() } },
         y1: { position: 'right', min: 0, max: 35, grid: { display: false }, ticks: { callback: v => v + '%' } }
       }
     }
   });
 
-  // Key Metrics Table (last 13 months: Mar-25 ~ Mar-26)
+  // Key Metrics Table — ev_table_precise 정밀값 사용
   const tableEl = document.getElementById('evMetricsTable');
   if (!tableEl) return;
-  const N = ev.ev_months.length;
-  const START = Math.max(0, N - 13);
-  const tableMonths = ev.ev_months.slice(START);
-  const headerCells = tableMonths.map(m => `<th class="right" style="white-space:nowrap">${m}</th>`).join('');
-  const fmt  = (arr, i) => arr[START + i] != null ? Math.round(arr[START + i] * 1000).toLocaleString() : '—';
-  const fmtP = (arr, i) => arr[START + i] != null ? arr[START + i].toFixed(1) + '%' : '—';
-  const row = (label, arr, formatter) =>
-    `<tr><td style="white-space:nowrap;font-weight:600">${label}</td>${tableMonths.map((_,i)=>`<td class="right">${formatter(arr,i)}</td>`).join('')}</tr>`;
+  const tMonths = precise.months;
+  const headerCells = tMonths.map(m => `<th class="right" style="white-space:nowrap">${m}</th>`).join('');
+  const fmtN = (arr, i) => arr[i] != null ? arr[i].toLocaleString() : '—';
+
+  // penetration: ev_months에서 Mar-25(index 50) 이후 13개
+  const penStart = ev.ev_months.indexOf('Mar-25');
+  const fmtP = (arr, i) => {
+    const v = arr[penStart + i];
+    return v != null ? v.toFixed(1) + '%' : '—';
+  };
 
   tableEl.innerHTML = `
-    <thead><tr><th style="min-width:180px"></th>${headerCells}</tr></thead>
+    <thead><tr><th style="min-width:220px"></th>${headerCells}</tr></thead>
     <tbody>
-      ${row('Cumulative # of Registered EVs', ev.ev_total_K, fmt)}
-      ${row('Passenger EV', ev.ev_passenger_K, fmt)}
-      ${row('Commercial EV', ev.ev_commercial_K, fmt)}
-      <tr class="ms-row"><td style="white-space:nowrap">EV Penetration Rate</td>${tableMonths.map((_,i)=>`<td class="right">${fmtP(ev.ev_total_penetration_pct, i)}</td>`).join('')}</tr>
-      <tr><td style="white-space:nowrap;padding-left:20px;color:var(--text-muted)">ㄴ Passenger EV ①</td>${tableMonths.map((_,i)=>`<td class="right" style="color:var(--text-muted)">${fmtP(ev.ev_passenger_penetration_pct, i)}</td>`).join('')}</tr>
-      <tr><td style="white-space:nowrap;padding-left:20px;color:var(--text-muted)">ㄴ Commercial EV ②</td>${tableMonths.map((_,i)=>`<td class="right" style="color:var(--text-muted)">${fmtP(ev.ev_commercial_penetration_pct, i)}</td>`).join('')}</tr>
+      <tr><td style="white-space:nowrap;font-weight:700">Cumulative # of Registered EV</td>${tMonths.map((_,i)=>`<td class="right">${fmtN(precise.total,i)}</td>`).join('')}</tr>
+      <tr><td style="white-space:nowrap;padding-left:16px">Passenger EV</td>${tMonths.map((_,i)=>`<td class="right">${fmtN(precise.passenger,i)}</td>`).join('')}</tr>
+      <tr><td style="white-space:nowrap;padding-left:16px">Commercial EV</td>${tMonths.map((_,i)=>`<td class="right">${fmtN(precise.commercial,i)}</td>`).join('')}</tr>
+      <tr class="ms-row"><td style="white-space:nowrap">EV Penetration Rate</td>${tMonths.map((_,i)=>`<td class="right">${fmtP(ev.ev_total_penetration_pct,i)}</td>`).join('')}</tr>
+      <tr><td style="white-space:nowrap;padding-left:16px;color:var(--text-muted)">Passenger EV ①</td>${tMonths.map((_,i)=>`<td class="right" style="color:var(--text-muted)">${fmtP(ev.ev_passenger_penetration_pct,i)}</td>`).join('')}</tr>
+      <tr><td style="white-space:nowrap;padding-left:16px;color:var(--text-muted)">Commercial EV ②</td>${tMonths.map((_,i)=>`<td class="right" style="color:var(--text-muted)">${fmtP(ev.ev_commercial_penetration_pct,i)}</td>`).join('')}</tr>
     </tbody>`;
 }
 
