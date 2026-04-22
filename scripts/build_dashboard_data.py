@@ -88,37 +88,44 @@ def merge_into_dashboard(historical: dict, snapshots: list) -> dict:
 
     for ym, snap in snapshots:
         label = month_to_label(ym)
+        already_in_historical = label in result.get("months", [])
 
-        if label in result.get("months", []):
-            print(f"  [skip] {label} - historical에 이미 존재")
-            continue
+        if already_in_historical:
+            print(f"  [skip] {label} - historical에 이미 존재 (차충비만 재계산)")
+        else:
+            result["months"].append(label)
+            if "months_fast_extended" in result:
+                result["months_fast_extended"].append(label)
 
-        result["months"].append(label)
-        if "months_fast_extended" in result:
-            result["months_fast_extended"].append(label)
+            for op_data in snap["slow"]["top5"]:
+                op = op_data["operator"]
+                result["slow_trend"].setdefault(op, []).append(op_data["count"])
 
-        for op_data in snap["slow"]["top5"]:
-            op = op_data["operator"]
-            result["slow_trend"].setdefault(op, []).append(op_data["count"])
+            for op_data in snap["fast"]["top5"]:
+                op = op_data["operator"]
+                result["fast_trend"].setdefault(op, []).append(op_data["count"])
 
-        for op_data in snap["fast"]["top5"]:
-            op = op_data["operator"]
-            result["fast_trend"].setdefault(op, []).append(op_data["count"])
+            for op, conc in snap.get("fast_concentration", {}).items():
+                result["concentration"].setdefault(op, {"GSMA": [], "GSMA_plus_metro": []})
+                result["concentration"][op]["GSMA"].append(conc["GSMA_pct"])
+                result["concentration"][op]["GSMA_plus_metro"].append(conc["GSMA_plus_metro_pct"])
 
-        for op, conc in snap.get("fast_concentration", {}).items():
-            result["concentration"].setdefault(op, {"GSMA": [], "GSMA_plus_metro": []})
-            result["concentration"][op]["GSMA"].append(conc["GSMA_pct"])
-            result["concentration"][op]["GSMA_plus_metro"].append(conc["GSMA_plus_metro_pct"])
+            for region in ["GSMA", "GSMA+광역시"]:
+                region_key = "GSMA" if region == "GSMA" else "GSMA_plus_metro"
+                for op, data in snap["fast_regional"][region]["operators"].items():
+                    result["market_share"].setdefault(op, {"GSMA": [], "GSMA_plus_metro": []})
+                    result["market_share"][op][region_key].append(data["ms_pct"])
 
-        for region in ["GSMA", "GSMA+광역시"]:
-            region_key = "GSMA" if region == "GSMA" else "GSMA_plus_metro"
-            for op, data in snap["fast_regional"][region]["operators"].items():
-                result["market_share"].setdefault(op, {"GSMA": [], "GSMA_plus_metro": []})
-                result["market_share"][op][region_key].append(data["ms_pct"])
+            month_totals[label] = {
+                "slow_K": round(snap["slow"]["total"] / 1000, 1),
+                "fast_K": round(snap["fast"]["total"] / 1000, 1),
+                "slow_ev": None,
+                "fast_ev": None,
+            }
+            print(f"  [append] {label}")
 
-        # EV 신규등록 데이터로 차충비(EVs/port) 계산
+        # EV 신규등록 데이터로 차충비(EVs/port) 계산 — historical 월 포함
         ev_reg_file = EV_REG_DIR / f"{ym}.json"
-        slow_ev = fast_ev = None
         if ev_reg_file.exists():
             ev_reg = json.loads(ev_reg_file.read_text(encoding="utf-8"))
             cum_ev = ev_reg["cumulative"]["total_ev"]
@@ -128,17 +135,20 @@ def merge_into_dashboard(historical: dict, snapshots: list) -> dict:
             fast_ev = round(cum_ev / fast_total, 2) if fast_total > 0 else None
             print(f"  [ev_reg] {ym} 누적EV={cum_ev:,} slow_ev={slow_ev} fast_ev={fast_ev}")
 
-            # ev_market 배열 업데이트
-            result = _append_ev_market(result, label, ym, ev_reg, snap)
+            # month_totals 덮어쓰기 (historical도 포함)
+            if label not in month_totals:
+                month_totals[label] = {
+                    "slow_K": round(snap["slow"]["total"] / 1000, 1),
+                    "fast_K": round(snap["fast"]["total"] / 1000, 1),
+                    "slow_ev": None,
+                    "fast_ev": None,
+                }
+            month_totals[label]["slow_ev"] = slow_ev
+            month_totals[label]["fast_ev"] = fast_ev
 
-        month_totals[label] = {
-            "slow_K": round(snap["slow"]["total"] / 1000, 1),
-            "fast_K": round(snap["fast"]["total"] / 1000, 1),
-            "slow_ev": slow_ev,
-            "fast_ev": fast_ev,
-        }
-
-        print(f"  [append] {label}")
+            # ev_market 배열 업데이트 (신규 월만)
+            if not already_in_historical:
+                result = _append_ev_market(result, label, ym, ev_reg, snap)
 
     # EV per port: None인 월은 직전 알려진 값으로 보간
     last_slow_ev = None
