@@ -572,11 +572,11 @@
 
     <div class="grid-2" style="margin-top:20px;">
       <div class="card">
-        <div class="card-header"><h3>YoY Growth Rate (Feb'25 → Feb'26)</h3><span class="tag">Slow</span></div>
+        <div class="card-header"><h3 id="titleSlowYoY">YoY Growth Rate (Feb'25 → Feb'26)</h3><span class="tag">Slow</span></div>
         <div class="card-body"><div class="chart-wrap" style="height:260px"><canvas id="chartSlowGrowth"></canvas></div></div>
       </div>
       <div class="card">
-        <div class="card-header"><h3>Latest M/S Snapshot · Feb-26</h3><span class="tag">Slow</span></div>
+        <div class="card-header"><h3 id="titleSlowSnapshot">Latest M/S Snapshot · Feb-26</h3><span class="tag">Slow</span></div>
         <div class="card-body"><div class="chart-wrap" style="height:260px"><canvas id="chartSlowDonut"></canvas></div></div>
       </div>
     </div>
@@ -605,11 +605,11 @@
 
     <div class="grid-2" style="margin-top:20px;">
       <div class="card">
-        <div class="card-header"><h3>YoY Growth Rate (Feb'25 → Feb'26)</h3><span class="tag fast">Fast</span></div>
+        <div class="card-header"><h3 id="titleFastYoY">YoY Growth Rate (Feb'25 → Feb'26)</h3><span class="tag fast">Fast</span></div>
         <div class="card-body"><div class="chart-wrap" style="height:260px"><canvas id="chartFastGrowth"></canvas></div></div>
       </div>
       <div class="card">
-        <div class="card-header"><h3>Latest M/S Snapshot · Feb-26</h3><span class="tag fast">Fast</span></div>
+        <div class="card-header"><h3 id="titleFastSnapshot">Latest M/S Snapshot · Feb-26</h3><span class="tag fast">Fast</span></div>
         <div class="card-body"><div class="chart-wrap" style="height:260px"><canvas id="chartFastDonut"></canvas></div></div>
       </div>
     </div>
@@ -641,11 +641,11 @@
 
     <div class="grid-2" style="margin-top:20px;">
       <div class="card">
-        <div class="card-header"><h3>Latest Concentration · Feb-26</h3><span class="tag fast">Snapshot</span></div>
+        <div class="card-header"><h3 id="titleConcSnapshot">Latest Concentration · Feb-26</h3><span class="tag fast">Snapshot</span></div>
         <div class="card-body"><div class="chart-wrap" style="height:260px"><canvas id="chartConcSnapshot"></canvas></div></div>
       </div>
       <div class="card">
-        <div class="card-header"><h3>Concentration Change (Feb'24 → Feb'26, 2Y)</h3><span class="tag fast">Delta</span></div>
+        <div class="card-header"><h3 id="titleConcDelta">Concentration Change (Feb'24 → Feb'26, 2Y)</h3><span class="tag fast">Delta</span></div>
         <div class="card-body"><div class="chart-wrap" style="height:260px"><canvas id="chartConcChange"></canvas></div></div>
       </div>
     </div>
@@ -676,11 +676,11 @@
 
     <div class="grid-2" style="margin-top:20px;">
       <div class="card">
-        <div class="card-header"><h3>Latest M/S · Feb-26 (GSMA vs GSMA+광역시)</h3><span class="tag fast">Comparison</span></div>
+        <div class="card-header"><h3 id="titleMSComparison">Latest M/S · Feb-26 (GSMA vs GSMA+광역시)</h3><span class="tag fast">Comparison</span></div>
         <div class="card-body"><div class="chart-wrap" style="height:260px"><canvas id="chartMSCompare"></canvas></div></div>
       </div>
       <div class="card">
-        <div class="card-header"><h3>M/S Change from Peak (Peak → Feb-26)</h3><span class="tag fast">Delta</span></div>
+        <div class="card-header"><h3 id="titleMSDelta">M/S Change from Peak (Peak → Feb-26)</h3><span class="tag fast">Delta</span></div>
         <div class="card-body"><div class="chart-wrap" style="height:260px"><canvas id="chartMSDelta"></canvas></div></div>
       </div>
     </div>
@@ -804,6 +804,20 @@ function render(data) {
   if (subtitle) {
     subtitle.textContent = `국내 전기차 충전 사업자(CPO) 시장 현황 — ${first} ~ ${latest}`;
   }
+
+  // Dynamic card titles — always reflect latest month
+  const setTitle = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+  const yoyMonth  = months.length >= 13 ? months[months.length - 13] : months[0];
+  const twoYrAgo  = months.length >= 25 ? months[months.length - 25] : months[0];
+  const fmtShort  = m => m ? m.replace('-', "'") : '';  // "Mar-26" → "Mar'26"
+  setTitle('titleSlowYoY',      `YoY Growth Rate (${fmtShort(yoyMonth)} → ${fmtShort(latest)})`);
+  setTitle('titleFastYoY',      `YoY Growth Rate (${fmtShort(yoyMonth)} → ${fmtShort(latest)})`);
+  setTitle('titleSlowSnapshot', `Latest M/S Snapshot · ${latest}`);
+  setTitle('titleFastSnapshot', `Latest M/S Snapshot · ${latest}`);
+  setTitle('titleConcSnapshot', `Latest Concentration · ${latest}`);
+  setTitle('titleConcDelta',    `Concentration Change (${fmtShort(twoYrAgo)} → ${fmtShort(latest)}, 2Y)`);
+  setTitle('titleMSComparison', `Latest M/S · ${latest} (GSMA vs GSMA+광역시)`);
+  setTitle('titleMSDelta',      `M/S Change from Peak (Peak → ${latest})`);
 
   // Show data-source notice only when API-sourced months are present (Mar '26 onwards)
   const hasNewData = data._meta?.new_months_added > 0 || months.some(m => {
