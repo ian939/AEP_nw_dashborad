@@ -2,10 +2,8 @@ name: Monthly Dashboard Update
 
 on:
   schedule:
-    # 매월 1일 KST 03:00 (UTC 18:00 of previous day)
-    # cron은 UTC 기준 → 매월 1일 18:00 UTC = 매월 2일 03:00 KST
-    # 안전하게 매월 1일 KST 03:00 (매월 전날 18:00 UTC)로 설정
-    - cron: '0 18 1 * *'
+    # 매월 15일 KST 03:00 (UTC 18:00 of the 14th)
+    - cron: '0 18 14 * *'
   workflow_dispatch:  # 수동 실행 가능
 
 jobs:
