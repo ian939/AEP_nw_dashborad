@@ -799,7 +799,21 @@ function render(data) {
   const subtitle = document.getElementById('pageSubtitle');
 
   const months = data.months || [];
-  const fastMonths = data.months_fast_extended || months;
+  // Fast 차트 x축: slow months 시작점(Jan-24)과 정렬하여 표시 (Jan-23~Dec-23 숨김)
+  const fastMonthsAll = data.months_fast_extended || months;
+  const fastTrimIdx = Math.max(0, fastMonthsAll.indexOf(months[0]));
+  const fastMonths = fastMonthsAll.slice(fastTrimIdx);
+  const trimArr = arr => Array.isArray(arr) ? arr.slice(fastTrimIdx) : arr;
+  const trimTrend = obj => {
+    if (!obj) return obj;
+    const out = {};
+    for (const [k, v] of Object.entries(obj)) {
+      out[k] = k.startsWith('_') ? v : trimArr(v);
+    }
+    return out;
+  };
+  const fastTrend = trimTrend(data.fast_trend);
+  const fastTrendTop10 = trimTrend(data.fast_trend_top10);
   const latest = data._meta?.latest_month || months[months.length - 1] || 'N/A';
   const first = months[0] || 'N/A';
   const gen = data._meta?.generated_at;
@@ -841,7 +855,7 @@ function render(data) {
 
   if (data.overview_5month) renderOverview(data.overview_5month);
   renderSlowTrend(months, data.slow_trend || {}, data.slow_trend_top10 || null);
-  renderFastTrend(fastMonths, data.fast_trend || {}, data.fast_trend_top10 || null);
+  renderFastTrend(fastMonths, fastTrend || {}, fastTrendTop10 || null);
   renderConcentration(months, data.concentration || {});
   renderMarketShare(months, data.market_share || {});
   if (data.ev_market) renderEvMarket(data.ev_market);
