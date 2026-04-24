@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SK electlink | Regional CPO Market Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --navy: #1a2b5c;
+  --navy-dark: #0f1a3d;
+  --navy-light: #2d4380;
+  --sk-red: #e4002b;
+  --sk-orange: #ff7a00;
+  --bg: #f5f6f8;
+  --card: #ffffff;
+  --border: #e2e5eb;
+  --text: #1a1f36;
+  --text-muted: #6b7280;
+  --text-light: #9ca3af;
+  --success: #059669;
+  --teal: #0a6e73;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* ===== Header (AEP tone) ===== */
+.header {
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.brand { display: flex; align-items: center; gap: 14px; }
+.logo { display: flex; align-items: center; gap: 8px; }
+.logo-mark {
+  width: 36px; height: 36px;
+  background: var(--sk-red);
+  border-radius: 6px;
+  display: grid; place-items: center;
+  color: white; font-weight: 900; font-size: 14px;
+  letter-spacing: -0.5px;
+  transform: rotate(-3deg);
+}
+.brand-text h1.brand-title { font-size: 15px; font-weight: 800; letter-spacing: -0.3px; border: none; padding: 0; color: var(--text); margin: 0; }
+.brand-text p { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+.header-meta { display: flex; align-items: center; gap: 10px; font-size: 11px; color: var(--text-muted); }
+.header-meta a { color: var(--text-muted); text-decoration: none; padding: 6px 10px; border-radius: 6px; transition: all 0.15s; font-weight: 600; font-size: 11px; }
+.header-meta a:hover { background: var(--bg); color: var(--navy); }
+.header-meta .date { padding: 6px 12px; background: var(--bg); border-radius: 6px; font-weight: 600; color: var(--text); }
+
+/* ===== Page title ===== */
+.page-title {
+  padding: 24px 32px 12px;
+  max-width: 1600px;
+  margin: 0 auto;
+  width: 100%;
+}
+.page-title .eyebrow {
+  font-size: 11px; font-weight: 700; letter-spacing: 1px;
+  color: var(--sk-red); text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.page-title h2.page-heading { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; color: var(--text); background: none; padding: 0; margin: 0; border-radius: 0; border: none; }
+.page-title h2.page-heading::before { display: none; }
+.page-title p { font-size: 12.5px; color: var(--text-muted); margin-top: 6px; line-height: 1.6; }
+
+/* ===== Main container ===== */
+main.container {
+  padding: 20px 32px 40px;
+  max-width: 1600px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* ===== Section headings (h2 = section divider, h3 = card title) ===== */
+h2 {
+  font-size: 17px; font-weight: 800; letter-spacing: -0.3px;
+  color: var(--text);
+  margin-top: 32px; margin-bottom: 12px;
+  padding: 14px 0 10px;
+  border-top: 2px solid var(--border);
+  background: none;
+  border-radius: 0;
+  display: flex; align-items: center; gap: 8px;
+}
+h2::before {
+  content: '';
+  display: inline-block;
+  width: 3px; height: 16px;
+  background: var(--sk-red);
+  border-radius: 2px;
+}
+h3 {
+  font-size: 14px; font-weight: 700; letter-spacing: -0.2px;
+  color: var(--navy);
+  margin-top: 20px; margin-bottom: 8px;
+  padding-left: 10px;
+  border-left: 3px solid var(--navy);
+}
+h4 { font-size: 13px; font-weight: 700; color: var(--navy); }
+
+/* ===== Notes / insights ===== */
+.note {
+  font-size: 11.5px; color: var(--text-muted);
+  background: linear-gradient(135deg, #eaf1ff 0%, #f0f5ff 100%);
+  border-left: 3px solid var(--navy);
+  padding: 10px 14px; border-radius: 6px;
+  margin: 10px 0;
+}
+.insights {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin: 16px 0;
+}
+.insights ul { margin: 4px 0 0 0; padding-left: 18px; }
+.insights li { margin-bottom: 6px; font-size: 12.5px; line-height: 1.6; }
+.insights b { color: var(--navy); }
+
+/* ===== Tables ===== */
+table { border-collapse: collapse; width: 100%; font-size: 12px; background: var(--card); margin: 8px 0 16px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+th, td { border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); padding: 7px 10px; text-align: right; }
+th:last-child, td:last-child { border-right: none; }
+tr:last-child td { border-bottom: none; }
+th { background: linear-gradient(to bottom, #fafbfc, #f5f6f8); font-weight: 700; color: var(--navy); text-align: center; font-size: 11.5px; letter-spacing: -0.1px; }
+td:first-child { text-align: left; font-weight: 600; color: var(--text); }
+tbody tr:nth-child(even) td { background: #fafbfc; }
+tbody tr:last-child td { background: linear-gradient(to bottom, #f0f5ff, #eaf1ff) !important; font-weight: 700; color: var(--navy); }
+
+/* ===== Chart card ===== */
+.chart-wrap {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px;
+  margin: 12px 0;
+}
+.row-flex { display: flex; gap: 16px; flex-wrap: wrap; }
+.row-flex > * { flex: 1 1 420px; }
+canvas { max-width: 100%; }
+.split-th { background: #eaf1ff !important; color: var(--navy) !important; }
+.split-th2 { background: #f0f5ff !important; color: var(--navy-light) !important; }
+
+/* ===== Executive KPI cards ===== */
+.exec-kpi { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 20px 0 8px; }
+@media (max-width: 900px) { .exec-kpi { grid-template-columns: repeat(2, 1fr); } }
+.kpi-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 18px;
+  border-top: 3px solid;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.kpi-card:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(26,43,92,0.06); }
+.kpi-card.kpi-blue { border-top-color: var(--navy); }
+.kpi-card.kpi-red { border-top-color: var(--sk-red); }
+.kpi-card.kpi-orange { border-top-color: var(--sk-orange); }
+.kpi-card.kpi-teal { border-top-color: var(--teal); }
+.kpi-card.kpi-purple { border-top-color: var(--navy-light); }
+.kpi-card.kpi-green { border-top-color: var(--success); }
+.kpi-label { font-size: 10.5px; color: var(--text-muted); letter-spacing: 0.5px; text-transform: uppercase; font-weight: 700; }
+.kpi-big { font-size: 24px; font-weight: 800; color: var(--navy); margin: 6px 0 4px; letter-spacing: -0.5px; }
+.kpi-sub { font-size: 11px; color: var(--text-muted); line-height: 1.45; }
+
+/* ===== Attract (Top/Bottom) cards ===== */
+.attract-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 14px 0; }
+@media (max-width: 900px) { .attract-grid { grid-template-columns: 1fr; } }
+.attract-section { background: var(--card); border-radius: 10px; padding: 16px 18px; border: 1px solid var(--border); }
+.attract-section h3 { border: none; padding: 0; margin: 0 0 10px; font-size: 13.5px; }
+.attract-item { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px dashed var(--border); }
+.attract-item:last-child { border-bottom: none; }
+.attract-rank { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; flex-shrink: 0; }
+.attract-hot .attract-rank { background: var(--sk-red); color: white; }
+.attract-cold .attract-rank { background: #e2e5eb; color: var(--text-muted); }
+.attract-body { font-size: 12.5px; line-height: 1.5; }
+.attract-body b { font-size: 13.5px; color: var(--navy); }
+.attract-reason { color: var(--text-muted); font-size: 11.5px; margin-top: 2px; display: block; }
+
+/* ===== Scorecard table ===== */
+.scorecard-tbl { font-size: 11.5px; }
+.scorecard-tbl th.h-ev    { background: #eaf1ff !important; color: var(--navy) !important; }
+.scorecard-tbl th.h-biz   { background: #fff2e8 !important; color: #b3541e !important; }
+.scorecard-tbl th.h-fast  { background: #ffe9ed !important; color: var(--sk-red) !important; }
+.scorecard-tbl th.h-slow  { background: #e8f1ff !important; color: var(--navy-light) !important; }
+.scorecard-tbl tbody td { text-align: right; }
+.scorecard-tbl tbody tr:last-child td { background: inherit !important; font-weight: normal; }
+
+/* ===== Tooltip ===== */
+.tt { position: relative; border-bottom: 1px dashed var(--sk-red); cursor: help; color: var(--sk-red); font-weight: 700; }
+.tt::after { content: ' 💬'; font-size: 10px; }
+.tt:hover .tt-body { visibility: visible; opacity: 1; }
+.tt-body {
+  visibility: hidden; opacity: 0; transition: opacity 0.15s;
+  position: absolute; z-index: 999; left: 0; top: calc(100% + 8px);
+  width: 420px; max-width: 90vw;
+  background: var(--navy-dark); color: #f1f5f9; text-align: left;
+  padding: 12px 14px; border-radius: 8px;
+  font-size: 12px; font-weight: normal; line-height: 1.5;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  white-space: normal;
+}
+.tt-body b { color: #ff9fad; }
+.tt-body h4 { margin: 0 0 6px; color: #ff9fad; font-size: 13px; border: none; padding: 0; }
+.tt-body ul { margin: 4px 0 6px; padding-left: 16px; }
+.tt-body li { margin-bottom: 3px; font-size: 11.5px; }
+.tt-body a { color: #93c5fd; text-decoration: underline; }
+.tt-body .tt-src { font-size: 10.5px; color: #94a3b8; margin-top: 6px; }
+
+.period-badge { display: inline-block; padding: 2px 7px; background: var(--sk-orange); color: white; border-radius: 3px; font-size: 10px; font-weight: 700; margin-left: 6px; letter-spacing: 0.2px; }
+
+/* ===== Interactive trend chips ===== */
+.region-chips {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  margin: 12px 0 14px;
+  padding: 12px 14px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.chip {
+  padding: 6px 13px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  border-radius: 20px;
+  font-size: 12px; cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit; font-weight: 600;
+}
+.chip:hover { background: var(--sk-red); color: white; border-color: var(--sk-red); transform: translateY(-1px); }
+.chip.active { background: var(--sk-red); color: white; border-color: var(--sk-red); font-weight: 700; box-shadow: 0 2px 6px rgba(228,0,43,0.3); }
+.chip-nation { background: var(--navy); color: white; border-color: var(--navy); }
+.chip-nation:hover, .chip-nation.active { background: var(--navy-dark); border-color: var(--navy-dark); }
+.trend-hint { font-size: 11px; color: var(--text-muted); margin-left: 8px; align-self: center; }
+.trend-region-label { display: inline-block; background: var(--sk-red); color: white; padding: 4px 12px; border-radius: 4px; font-size: 13px; font-weight: 700; margin-right: 8px; }
+
+/* ===== Apt logic sidebar ===== */
+.apt-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin: 14px 0; }
+@media (max-width: 900px) { .apt-grid { grid-template-columns: 1fr; } }
+.apt-logic {
+  background: linear-gradient(135deg, #f0f5ff 0%, #eaf1ff 100%);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 18px;
+  font-size: 12.5px; line-height: 1.55;
+  color: var(--text);
+}
+.apt-logic h4 { margin: 0 0 10px; color: var(--navy); font-size: 13.5px; border-bottom: 1px solid var(--border); padding-bottom: 6px; border-left: none; padding-left: 0; }
+.apt-logic h5 { margin: 12px 0 6px; color: var(--navy-light); font-size: 12.5px; font-weight: 700; }
+.apt-logic code { background: white; padding: 2px 6px; border-radius: 3px; font-size: 11.5px; color: var(--sk-red); border: 1px solid var(--border); }
+.apt-logic table { font-size: 11px; margin: 6px 0; border-radius: 4px; }
+.apt-logic table th, .apt-logic table td { padding: 4px 6px; }
+.apt-logic ul { margin: 4px 0; padding-left: 18px; }
+.apt-logic li { margin-bottom: 3px; font-size: 11.5px; }
+.apt-logic .src { font-size: 10.5px; color: var(--text-muted); margin-top: 10px; border-top: 1px dashed var(--border); padding-top: 6px; }
+.apt-logic a { color: var(--navy); text-decoration: underline; }
+
+/* ===== K-apt tabs ===== */
+.kapt-tabs {
+  display: flex; flex-wrap: wrap; gap: 4px;
+  margin: 14px 0 0;
+  padding: 10px 12px 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px 10px 0 0;
+  border-bottom: none;
+}
+.kapt-tab {
+  padding: 7px 13px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  border-radius: 6px 6px 0 0;
+  font-size: 12px; cursor: pointer;
+  font-family: inherit; font-weight: 600;
+  transition: all 0.12s;
+  position: relative; top: 1px;
+}
+.kapt-tab:hover { background: #ffe9ed; color: var(--sk-red); border-color: var(--sk-red); }
+.kapt-tab.active { background: var(--sk-red); color: white; border-color: var(--sk-red); font-weight: 700; z-index: 2; }
+.kapt-tab-nation { background: var(--navy); color: white; border-color: var(--navy); }
+.kapt-tab-nation.active { background: var(--navy-dark); border-color: var(--navy-dark); }
+.kapt-panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 0 10px 10px 10px;
+  padding: 20px 24px;
+  margin-bottom: 20px;
+}
+.kapt-panel-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 2px solid var(--border); }
+.kapt-panel-header h3 { margin: 0; font-size: 17px; color: var(--navy); border: none; padding: 0; }
+.kapt-panel-header .sub { font-size: 11.5px; color: var(--text-muted); }
+.kapt-kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+@media (max-width: 900px) { .kapt-kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+.kapt-mini-kpi {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.kapt-mini-kpi .lbl { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px; font-weight: 700; }
+.kapt-mini-kpi .val { font-size: 17px; font-weight: 800; color: var(--navy); margin-top: 3px; letter-spacing: -0.3px; }
+.kapt-mini-kpi .sub { font-size: 10.5px; color: var(--text-muted); margin-top: 1px; }
+.kapt-mini-kpi.hl-red { background: #fff5f6; border-color: #ffd5dc; }
+.kapt-mini-kpi.hl-green { background: #f0fdf4; border-color: #bbf7d0; }
+.kapt-mini-kpi.hl-red .val { color: var(--sk-red); }
+.kapt-mini-kpi.hl-green .val { color: var(--success); }
+.kapt-two-col { display: grid; grid-template-columns: 3fr 2fr; gap: 16px; align-items: start; }
+@media (max-width: 900px) { .kapt-two-col { grid-template-columns: 1fr; } }
+
+details > summary { color: var(--navy) !important; background: var(--bg) !important; border: 1px solid var(--border) !important; font-weight: 700 !important; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="brand">
+    <div class="logo">
+      <div class="logo-mark">SK</div>
+      <div class="brand-text">
+        <h1 class="brand-title">SK electlink</h1>
+        <p>Regional CPO Market Dashboard</p>
+      </div>
+    </div>
+  </div>
+  <div class="header-meta">
+    <a href="./index.html">← 홈</a>
+    <span class="date">2023 – 2026.1Q</span>
+  </div>
+</div>
+
+<div class="page-title">
+  <div class="eyebrow">Regional Analysis</div>
+  <h2 class="page-heading">국내 전기차 충전 (CPO) Market · 지역별 대시보드</h2>
+  <p><b>분석 범위</b>: 2023 / 2024 / 2025 말 + <b>2026.1Q (26년 3월말 등록 기준)</b> 4시점 · EV (국토부) · NW (환경부 2026-04-23 snapshot) · 한전 사업자용 (2019–2025) · SKEL NW (내부 대시보드) &nbsp;·&nbsp; <b>분류 기준</b>: 30kW 미만 완속 / 30kW 이상 급속 (calc_capacity) · 면당 Capa = 급속 75kW / 완속 7kW 가정 · CPO 단가 320원/kWh 가정</p>
+</div>
+
+<main class="container">
+
+<div class="exec-kpi">
+  <div class="kpi-card kpi-blue">
+    <div class="kpi-label">전국 EV <span class="period-badge">2026.1Q</span></div>
+    <div class="kpi-big">981,321</div>
+    <div class="kpi-sub">Q1 순증 +82,220대 (vs '25말 +9.1%)<br>'23→'25 CAGR 28.6%</div>
+  </div>
+  <div class="kpi-card kpi-red">
+    <div class="kpi-label">충전기 <span class="period-badge">2026.1Q</span></div>
+    <div class="kpi-big">504,134</div>
+    <div class="kpi-sub">급속 50,520 · 완속 453,614<br>Q1 순증 +32,263기 (vs '25말 +6.8%)</div>
+  </div>
+  <div class="kpi-card kpi-teal">
+    <div class="kpi-label">급속 차충비 <span class="period-badge">2026.1Q</span></div>
+    <div class="kpi-big">19.42</div>
+    <div class="kpi-sub">'23 15.85 → '25 18.08 → Q1 19.42</div>
+  </div>
+  <div class="kpi-card kpi-purple">
+    <div class="kpi-label">완속 차충비 <span class="period-badge">2026.1Q</span></div>
+    <div class="kpi-big">2.16</div>
+    <div class="kpi-sub">'23 2.25 → '25 2.13 → Q1 2.16</div>
+  </div>
+  <div class="kpi-card kpi-orange">
+    <div class="kpi-label">사업자용 충전량 (CPO)</div>
+    <div class="kpi-big">2,872 GWh</div>
+    <div class="kpi-sub">'25 기준 · '23→'25 CAGR 38.8% · ('26 Kepco 미발표)</div>
+  </div>
+  <div class="kpi-card kpi-green">
+    <div class="kpi-label">CPO 시장 규모 @320원/kWh</div>
+    <div class="kpi-big">9,189 억원</div>
+    <div class="kpi-sub">'25 기준 · '23 4,770억 · CAGR 38.8%</div>
+  </div>
+</div>
+
+<h2 id="sec0">⓪ Executive Summary · 지역별 매력도 스코어카드</h2>
+<div class="note">매력도 Score = EV CAGR '23–25 (12%) + Q1'26 EV 성장 (8%) + CPO 매출 CAGR (25%) + 시장 규모 (15%) + 급속 공급 gap Q1 (20%) + 급속 NW 확대 역수 (8%) + EV 규모 Q1 (12%). Top5 빨강 / Bottom5 회색.</div>
+
+<div class="attract-grid">
+  <div class="attract-section">
+    <h3 style="color:#dc2626;margin-top:0">🎯 매력적인 지역 Top 3</h3>
+    <div class="attract-item attract-hot"><div class="attract-rank">#1</div><div class="attract-body"><span class="tt">부산<span class="tt-body"><h4>부산 : 전국 최고 수준 보조금 + 차별화 제도</h4><ul><li><b>승용차 최대 810만원</b> + 국비 + 지역할인 결합 시 최대 100만원 추가 절감</li><li><b>전국 최초 '아이조아 부산조아'</b> (출산 가정 +150만원)</li><li><b>전국 최초 '지역할인제'</b> (판매점 50만원 + 시 50만원)</li><li>개인사업자 <b>1대 → 2대</b> 확대</li><li>2025 상반기 보급 <b>2,895대 (전년 동기 +58%)</b></li><li>배경 : 해양도시 미세먼지 · 탄소중립</li></ul><div class="tt-src">출처: <a href="https://www.khan.co.kr/article/202507141335001" target="_blank">경향신문 25.07</a> · <a href="https://www.busan.com/view/busan/view.php?code=2025071416374922347" target="_blank">부산일보 25.07</a></div></span></span> · Score 81.8<br><span class="attract-reason">EV 수요 高성장 (+32% CAGR) · 사업자용 +48% CAGR · 급속 공급 부족 (차충비 32)</span></div></div><div class="attract-item attract-hot"><div class="attract-rank">#2</div><div class="attract-body">경기 · Score 74.5<br><span class="attract-reason">EV 수요 高성장 (+35% CAGR) · Q1'26 +10% 고성장 · 사업자용 +47% CAGR · 시장 규모 大 (1004 GWh)</span></div></div><div class="attract-item attract-hot"><div class="attract-rank">#3</div><div class="attract-body"><span class="tt">경남<span class="tt-body"><h4>경남(창원) : 전국 最高 보조금 한도</h4><ul><li><b>중대형 승용차 최대 1,850만원</b> (부산 810만원의 2.3배)</li><li>소형 1,010만원 · 초소형 400만원 · 화물차 최대 1,590만원</li><li>다자녀 국비 <b>최대 300만원 추가</b></li><li>배출 5등급 경유차 폐차 연계 <b>+200만원 추가</b></li><li>배경 : 탄소중립 교통도시 · 산업단지 대기질</li></ul><div class="tt-src">출처: <a href="https://www.cwtr.co.kr/news/articleView.html?idxno=13961" target="_blank">창원특례신문</a> · <a href="https://www.welfarehello.com/policy/8467c9b2-f065-42cd-abd1-c5a18c4ad5f4" target="_blank">웰로</a></div></span></span> · Score 64.9<br><span class="attract-reason">EV 수요 高성장 (+35% CAGR) · Q1'26 +12% 고성장</span></div></div>
+  </div>
+  <div class="attract-section">
+    <h3 style="color:#64748b;margin-top:0">🧊 덜 매력적인 지역 Bottom 3</h3>
+    <div class="attract-item attract-cold"><div class="attract-rank">#15</div><div class="attract-body">강원 · Score 38.9<br><span class="attract-reason">EV CAGR +19% · Q1 +9% · 급속 차충비 10 (공급 여유)</span></div></div><div class="attract-item attract-cold"><div class="attract-rank">#16</div><div class="attract-body">광주 · Score 38.4<br><span class="attract-reason">EV CAGR +23% · Q1 +11% · 급속 차충비 19 (공급 여유)</span></div></div><div class="attract-item attract-cold"><div class="attract-rank">#17</div><div class="attract-body">대전 · Score 37.4<br><span class="attract-reason">EV CAGR +19% · Q1 +7% · 급속 차충비 21 (공급 여유)</span></div></div>
+  </div>
+</div>
+
+<h3 style="margin-top:20px">표 0. 지역별 종합 스코어카드 (2026.1Q 기준 + '23→'25 CAGR)</h3>
+<div style="overflow-x:auto">
+<table class="scorecard-tbl">
+<thead>
+<tr>
+  <th rowspan="2">순위·지역</th>
+  <th rowspan="2">매력도<br>Score</th>
+  <th colspan="3" class="h-ev">EV 보급</th>
+  <th colspan="2" class="h-biz">CPO 충전량<br>(사업자용)</th>
+  <th colspan="2" class="h-fast">급속 차충비</th>
+  <th class="h-slow">완속</th>
+  <th colspan="2" class="h-fast">급속 NW</th>
+  <th colspan="2" class="h-slow">완속 NW</th>
+</tr>
+<tr>
+  <th class="h-ev">Q1'26 (대)</th><th class="h-ev">CAGR '23-'25</th><th class="h-ev">Q1'26 YoY</th>
+  <th class="h-biz">'25 (GWh)</th><th class="h-biz">CAGR</th>
+  <th class="h-fast">Q1'26</th><th class="h-fast">ΔQ1 vs '25</th>
+  <th class="h-slow">Q1'26</th>
+  <th class="h-fast">Q1'26 (기)</th><th class="h-fast">CAGR</th>
+  <th class="h-slow">Q1'26 (기)</th><th class="h-slow">CAGR</th>
+</tr>
+</thead>
+<tbody>
+<tr style="background:#fef2f2"><td style="text-align:left"><span style="background:#dc2626;color:white;padding:2px 6px;border-radius:3px;font-size:11px;margin-right:4px">#1</span><b><span class="tt">부산<span class="tt-body"><h4>부산 : 전국 최고 수준 보조금 + 차별화 제도</h4><ul><li><b>승용차 최대 810만원</b> + 국비 + 지역할인 결합 시 최대 100만원 추가 절감</li><li><b>전국 최초 '아이조아 부산조아'</b> (출산 가정 +150만원)</li><li><b>전국 최초 '지역할인제'</b> (판매점 50만원 + 시 50만원)</li><li>개인사업자 <b>1대 → 2대</b> 확대</li><li>2025 상반기 보급 <b>2,895대 (전년 동기 +58%)</b></li><li>배경 : 해양도시 미세먼지 · 탄소중립</li></ul><div class="tt-src">출처: <a href="https://www.khan.co.kr/article/202507141335001" target="_blank">경향신문 25.07</a> · <a href="https://www.busan.com/view/busan/view.php?code=2025071416374922347" target="_blank">부산일보 25.07</a></div></span></span></b></td><td><b>81.8</b></td><td>66,268</td><td><span style="color:#dc2626">▲ 32.4%</span></td><td><span style="color:#dc2626">▲ 9.2%</span></td><td>169.8</td><td><span style="color:#dc2626">▲ 48.5%</span></td><td>32.2</td><td><span style="color:#dc2626">▲ 7.9%</span></td><td>2.3</td><td>2,058</td><td><span style="color:#dc2626">▲ 17.0%</span></td><td>29,376</td><td><span style="color:#dc2626">▲ 23.5%</span></td></tr><tr style="background:#fef2f2"><td style="text-align:left"><span style="background:#dc2626;color:white;padding:2px 6px;border-radius:3px;font-size:11px;margin-right:4px">#2</span><b>경기</b></td><td><b>74.5</b></td><td>227,933</td><td><span style="color:#dc2626">▲ 34.7%</span></td><td><span style="color:#dc2626">▲ 10.1%</span></td><td>1,003.5</td><td><span style="color:#dc2626">▲ 47.3%</span></td><td>18.6</td><td><span style="color:#dc2626">▲ 7.9%</span></td><td>1.7</td><td>12,263</td><td><span style="color:#dc2626">▲ 27.5%</span></td><td>137,315</td><td><span style="color:#dc2626">▲ 36.9%</span></td></tr><tr style="background:#fef2f2"><td style="text-align:left"><span style="background:#dc2626;color:white;padding:2px 6px;border-radius:3px;font-size:11px;margin-right:4px">#3</span><b><span class="tt">경남<span class="tt-body"><h4>경남(창원) : 전국 最高 보조금 한도</h4><ul><li><b>중대형 승용차 최대 1,850만원</b> (부산 810만원의 2.3배)</li><li>소형 1,010만원 · 초소형 400만원 · 화물차 최대 1,590만원</li><li>다자녀 국비 <b>최대 300만원 추가</b></li><li>배출 5등급 경유차 폐차 연계 <b>+200만원 추가</b></li><li>배경 : 탄소중립 교통도시 · 산업단지 대기질</li></ul><div class="tt-src">출처: <a href="https://www.cwtr.co.kr/news/articleView.html?idxno=13961" target="_blank">창원특례신문</a> · <a href="https://www.welfarehello.com/policy/8467c9b2-f065-42cd-abd1-c5a18c4ad5f4" target="_blank">웰로</a></div></span></span></b></td><td><b>64.9</b></td><td>74,025</td><td><span style="color:#dc2626">▲ 34.9%</span></td><td><span style="color:#dc2626">▲ 12.3%</span></td><td>187.2</td><td><span style="color:#dc2626">▲ 34.9%</span></td><td>20.1</td><td><span style="color:#dc2626">▲ 11.3%</span></td><td>2.8</td><td>3,680</td><td><span style="color:#dc2626">▲ 23.2%</span></td><td>26,131</td><td><span style="color:#dc2626">▲ 34.8%</span></td></tr><tr style="background:#fef2f2"><td style="text-align:left"><span style="background:#dc2626;color:white;padding:2px 6px;border-radius:3px;font-size:11px;margin-right:4px">#4</span><b>인천</b></td><td><b>59.4</b></td><td>85,029</td><td><span style="color:#dc2626">▲ 40.6%</span></td><td><span style="color:#dc2626">▲ 6.5%</span></td><td>149.4</td><td><span style="color:#dc2626">▲ 19.4%</span></td><td>41.7</td><td><span style="color:#dc2626">▲ 4.3%</span></td><td>2.9</td><td>2,038</td><td><span style="color:#dc2626">▲ 27.3%</span></td><td>29,538</td><td><span style="color:#dc2626">▲ 42.2%</span></td></tr><tr style="background:#fef2f2"><td style="text-align:left"><span style="background:#dc2626;color:white;padding:2px 6px;border-radius:3px;font-size:11px;margin-right:4px">#5</span><b>전남</b></td><td><b>56.9</b></td><td>45,162</td><td><span style="color:#dc2626">▲ 30.7%</span></td><td><span style="color:#dc2626">▲ 9.3%</span></td><td>78.5</td><td><span style="color:#dc2626">▲ 42.4%</span></td><td>17.8</td><td><span style="color:#dc2626">▲ 8.4%</span></td><td>3.4</td><td>2,542</td><td><span style="color:#dc2626">▲ 17.3%</span></td><td>13,321</td><td><span style="color:#dc2626">▲ 32.4%</span></td></tr><tr><td style="text-align:left"><span style="background:#e5e7eb;color:#334155;padding:2px 6px;border-radius:3px;font-size:11px;margin-right:4px">#6</span><b>경북</b></td><td><b>56.1</b></td><td>50,683</td><td><span style="color:#dc2626">▲ 29.8%</span></td><td><span style="color:#dc2626">▲ 12.4%</span></td><td>142.2</td><td><span style="color:#dc2626">▲ 39.7%</span></td><td>12.8</td><td><span style="color:#dc2626">▲ 11.7%</span></td><td>2.9</td><td>3,969</td><td><span style="color:#dc2626">▲ 15.6%</span></td><td>17,697</td><td><span style="color:#dc2626">▲ 31.0%</span></td></tr><tr><td style="text-align:left"><span style="background:#e5e7eb;color:#334155;padding:2px 6px;border-radius:3px;font-size:11px;margin-right:4px">#7</span><b>울산</b></td><td><b>53.6</b></td><td>14,730</td><td><span style="color:#dc2626">▲ 30.5%</span></td><td><span style="color:#dc2626">▲ 10.4%</span></td><td>45.7</td><td><span style="color:#dc2626">▲ 50.6%</span></td><td>14.2</td><td><span style="color:#dc2626">▲ 9.7%</span></td><td>1.6</td><td>1,040</td><td><span style="color:#dc2626">▲ 12.3%</span></td><td>9,282</td><td><span style="color:#dc2626">▲ 37.9%</span></td></tr><tr><td style="text-align:left"><span style="background:#e5e7eb;color:#334155;padding:2px 6px;border-radius:3px;font-size:11px;margin-right:4px">#8</span><b>충북</b></td><td><b>51.8</b></td><td>36,894</td><td><span style="color:#dc2626">▲ 28.3%</span></td><td><span style="color:#dc2626">▲ 12.1%</span></td><td>106.4</td><td><span style="color:#dc2626">▲ 41.9%</span></td><td>16.1</td><td><span style="color:#dc2626">▲ 9.5%</span></td><td>2.6</td><td>2,297</td><td><span style="color:#dc2626">▲ 18.4%</span></td><td>14,414</td><td><span style="color:#dc2626">▲ 38.9%</span></td></tr><tr><td style="text-align:left"><span style="background:#e5e7eb;color:#334155;padding:2px 6px;border-radius:3px;font-size:11px;margin-right:4px">#9</span><b>충남</b></td><td><b>50.4</b></td><td>44,920</td><td><span style="color:#dc2626">▲ 28.5%</span></td><td><span style="color:#dc2626">▲ 12.8%</span></td><td>117.2</td><td><span style="color:#dc2626">▲ 40.9%</span></td><td>15.7</td><td><span style="color:#dc2626">▲ 11.4%</span></td><td>2.4</td><td>2,870</td><td><span style="color:#dc2626">▲ 22.2%</span></td><td>18,462</td><td><span style="color:#dc2626">▲ 34.0%</span></td></tr><tr><td style="text-align:left"><span style="background:#e5e7eb;color:#334155;padding:2px 6px;border-radius:3px;font-size:11px;margin-right:4px">#10</span><b>서울</b></td><td><b>49.2</b></td><td>107,565</td><td><span style="color:#dc2626">▲ 17.9%</span></td><td><span style="color:#dc2626">▲ 6.2%</span></td><td>288.8</td><td><span style="color:#dc2626">▲ 30.9%</span></td><td>20.0</td><td><span style="color:#dc2626">▲ 3.6%</span></td><td>1.6</td><td>5,376</td><td><span style="color:#dc2626">▲ 21.5%</span></td><td>68,354</td><td><span style="color:#dc2626">▲ 25.1%</span></td></tr><tr><td style="text-align:left"><span style="background:#e5e7eb;color:#334155;padding:2px 6px;border-radius:3px;font-size:11px;margin-right:4px">#11</span><b>대구</b></td><td><b>46.4</b></td><td>44,972</td><td><span style="color:#dc2626">▲ 18.4%</span></td><td><span style="color:#dc2626">▲ 5.6%</span></td><td>119.7</td><td><span style="color:#dc2626">▲ 26.6%</span></td><td>25.2</td><td><span style="color:#dc2626">▲ 4.4%</span></td><td>2.0</td><td>1,781</td><td><span style="color:#dc2626">▲ 8.0%</span></td><td>22,033</td><td><span style="color:#dc2626">▲ 29.7%</span></td></tr><tr><td style="text-align:left"><span style="background:#e5e7eb;color:#334155;padding:2px 6px;border-radius:3px;font-size:11px;margin-right:4px">#12</span><b>전북</b></td><td><b>45.1</b></td><td>33,648</td><td><span style="color:#dc2626">▲ 24.2%</span></td><td><span style="color:#dc2626">▲ 10.3%</span></td><td>102.1</td><td><span style="color:#dc2626">▲ 42.5%</span></td><td>11.9</td><td><span style="color:#dc2626">▲ 9.0%</span></td><td>2.4</td><td>2,827</td><td><span style="color:#dc2626">▲ 20.5%</span></td><td>14,226</td><td><span style="color:#dc2626">▲ 34.0%</span></td></tr><tr style="background:#f1f5f9;color:#64748b"><td style="text-align:left"><span style="background:#94a3b8;color:white;padding:2px 6px;border-radius:3px;font-size:11px;margin-right:4px">#13</span><b>제주</b></td><td><b>44.1</b></td><td>64,864</td><td><span style="color:#dc2626">▲ 24.5%</span></td><td><span style="color:#dc2626">▲ 6.2%</span></td><td>69.9</td><td><span style="color:#dc2626">▲ 18.6%</span></td><td>29.6</td><td><span style="color:#dc2626">▲ 5.9%</span></td><td>10.4</td><td>2,191</td><td><span style="color:#dc2626">▲ 12.4%</span></td><td>6,235</td><td><span style="color:#dc2626">▲ 18.2%</span></td></tr><tr style="background:#f1f5f9;color:#64748b"><td style="text-align:left"><span style="background:#94a3b8;color:white;padding:2px 6px;border-radius:3px;font-size:11px;margin-right:4px">#14</span><b>세종</b></td><td><b>43.5</b></td><td>8,300</td><td><span style="color:#dc2626">▲ 29.2%</span></td><td><span style="color:#dc2626">▲ 13.2%</span></td><td>37.5</td><td><span style="color:#dc2626">▲ 37.0%</span></td><td>18.1</td><td><span style="color:#dc2626">▲ 12.0%</span></td><td>1.4</td><td>459</td><td><span style="color:#dc2626">▲ 15.7%</span></td><td>5,858</td><td><span style="color:#dc2626">▲ 21.8%</span></td></tr><tr style="background:#f1f5f9;color:#64748b"><td style="text-align:left"><span style="background:#94a3b8;color:white;padding:2px 6px;border-radius:3px;font-size:11px;margin-right:4px">#15</span><b>강원</b></td><td><b>38.9</b></td><td>27,998</td><td><span style="color:#dc2626">▲ 18.7%</span></td><td><span style="color:#dc2626">▲ 9.0%</span></td><td>110.5</td><td><span style="color:#dc2626">▲ 41.7%</span></td><td>10.2</td><td><span style="color:#dc2626">▲ 8.2%</span></td><td>2.0</td><td>2,752</td><td><span style="color:#dc2626">▲ 16.4%</span></td><td>14,136</td><td><span style="color:#dc2626">▲ 32.0%</span></td></tr><tr style="background:#f1f5f9;color:#64748b"><td style="text-align:left"><span style="background:#94a3b8;color:white;padding:2px 6px;border-radius:3px;font-size:11px;margin-right:4px">#16</span><b>광주</b></td><td><b>38.4</b></td><td>21,196</td><td><span style="color:#dc2626">▲ 23.5%</span></td><td><span style="color:#dc2626">▲ 10.9%</span></td><td>69.1</td><td><span style="color:#dc2626">▲ 36.6%</span></td><td>19.2</td><td><span style="color:#dc2626">▲ 9.1%</span></td><td>1.5</td><td>1,103</td><td><span style="color:#dc2626">▲ 20.6%</span></td><td>14,028</td><td><span style="color:#dc2626">▲ 36.5%</span></td></tr><tr style="background:#f1f5f9;color:#64748b"><td style="text-align:left"><span style="background:#94a3b8;color:white;padding:2px 6px;border-radius:3px;font-size:11px;margin-right:4px">#17</span><b>대전</b></td><td><b>37.4</b></td><td>27,134</td><td><span style="color:#dc2626">▲ 19.2%</span></td><td><span style="color:#dc2626">▲ 6.7%</span></td><td>74.0</td><td><span style="color:#dc2626">▲ 28.9%</span></td><td>21.3</td><td><span style="color:#dc2626">▲ 1.4%</span></td><td>2.0</td><td>1,274</td><td><span style="color:#dc2626">▲ 17.6%</span></td><td>13,208</td><td><span style="color:#dc2626">▲ 23.7%</span></td></tr>
+</tbody>
+</table>
+</div>
+
+<h2>◉ 인터랙티브 · 시도별 종합 트렌드 (EV · NW · 차충비)</h2>
+<div class="note">하단 지역 Chip에 <b>마우스를 올리면</b> 해당 지역의 EV 보급 · NW 대수(급/완속) · 차충비 4시점 추이가 차트에 표시됩니다. 기본값: 전국.</div>
+
+<div class="region-chips">
+  <button class="chip chip-nation active" data-sido="전국">🇰🇷 전국</button>
+  <button class="chip" data-sido="서울">서울</button><button class="chip" data-sido="부산">부산</button><button class="chip" data-sido="대구">대구</button><button class="chip" data-sido="인천">인천</button><button class="chip" data-sido="광주">광주</button><button class="chip" data-sido="대전">대전</button><button class="chip" data-sido="울산">울산</button><button class="chip" data-sido="세종">세종</button><button class="chip" data-sido="경기">경기</button><button class="chip" data-sido="강원">강원</button><button class="chip" data-sido="충북">충북</button><button class="chip" data-sido="충남">충남</button><button class="chip" data-sido="전북">전북</button><button class="chip" data-sido="전남">전남</button><button class="chip" data-sido="경북">경북</button><button class="chip" data-sido="경남">경남</button><button class="chip" data-sido="제주">제주</button>
+  <span class="trend-hint">※ 마우스 호버 (or 클릭 고정)</span>
+</div>
+
+<div class="chart-wrap">
+  <div style="margin-bottom:8px"><span class="trend-region-label" id="trendRegionLabel">전국</span><span style="font-size:12.5px;color:#64748b">EV 보급 · 급/완속 충전기 대수 (막대) + 급/완속 차충비 (꺾은선) · 4시점</span></div>
+  <canvas id="chartTrend" height="95"></canvas>
+</div>
+
+<h2>① 지역별 연간 전기차 보급 대수 (2023 – 2026.1Q)</h2>
+<div class="chart-wrap"><canvas id="chartEV" height="110"></canvas></div>
+
+<h3>표 1. 시도별 EV 보급 대수 (4시점)</h3>
+<table>
+<thead>
+<tr><th>시도</th><th>2023</th><th>2024</th><th>2025</th><th>2026.1Q</th><th>YoY '24</th><th>YoY '25</th><th>Q1 '26 성장</th><th>CAGR '23–'25</th></tr>
+</thead>
+<tbody>
+<tr><td>서울</td><td>72,937</td><td>83,868</td><td>101,331</td><td>107,565</td><td>+15.0%</td><td>+20.8%</td><td>+6.2%</td><td>+17.9%</td></tr><tr><td><span class="tt">부산<span class="tt-body"><h4>부산 : 전국 최고 수준 보조금 + 차별화 제도</h4><ul><li><b>승용차 최대 810만원</b> + 국비 + 지역할인 결합 시 최대 100만원 추가 절감</li><li><b>전국 최초 '아이조아 부산조아'</b> (출산 가정 +150만원)</li><li><b>전국 최초 '지역할인제'</b> (판매점 50만원 + 시 50만원)</li><li>개인사업자 <b>1대 → 2대</b> 확대</li><li>2025 상반기 보급 <b>2,895대 (전년 동기 +58%)</b></li><li>배경 : 해양도시 미세먼지 · 탄소중립</li></ul><div class="tt-src">출처: <a href="https://www.khan.co.kr/article/202507141335001" target="_blank">경향신문 25.07</a> · <a href="https://www.busan.com/view/busan/view.php?code=2025071416374922347" target="_blank">부산일보 25.07</a></div></span></span></td><td>34,643</td><td>44,259</td><td>60,687</td><td>66,268</td><td>+27.8%</td><td>+37.1%</td><td>+9.2%</td><td>+32.4%</td></tr><tr><td>대구</td><td>30,396</td><td>35,212</td><td>42,592</td><td>44,972</td><td>+15.8%</td><td>+21.0%</td><td>+5.6%</td><td>+18.4%</td></tr><tr><td>인천</td><td>40,397</td><td>54,398</td><td>79,860</td><td>85,029</td><td>+34.7%</td><td>+46.8%</td><td>+6.5%</td><td>+40.6%</td></tr><tr><td>광주</td><td>12,538</td><td>15,240</td><td>19,115</td><td>21,196</td><td>+21.6%</td><td>+25.4%</td><td>+10.9%</td><td>+23.5%</td></tr><tr><td>대전</td><td>17,889</td><td>21,314</td><td>25,432</td><td>27,134</td><td>+19.1%</td><td>+19.3%</td><td>+6.7%</td><td>+19.2%</td></tr><tr><td>울산</td><td>7,838</td><td>9,817</td><td>13,340</td><td>14,730</td><td>+25.2%</td><td>+35.9%</td><td>+10.4%</td><td>+30.5%</td></tr><tr><td>세종</td><td>4,393</td><td>5,424</td><td>7,330</td><td>8,300</td><td>+23.5%</td><td>+35.1%</td><td>+13.2%</td><td>+29.2%</td></tr><tr><td>경기</td><td>114,117</td><td>151,850</td><td>207,075</td><td>227,933</td><td>+33.1%</td><td>+36.4%</td><td>+10.1%</td><td>+34.7%</td></tr><tr><td>강원</td><td>18,236</td><td>21,004</td><td>25,679</td><td>27,998</td><td>+15.2%</td><td>+22.3%</td><td>+9.0%</td><td>+18.7%</td></tr><tr><td>충북</td><td>19,972</td><td>25,375</td><td>32,901</td><td>36,894</td><td>+27.1%</td><td>+29.7%</td><td>+12.1%</td><td>+28.3%</td></tr><tr><td>충남</td><td>24,130</td><td>30,654</td><td>39,839</td><td>44,920</td><td>+27.0%</td><td>+30.0%</td><td>+12.8%</td><td>+28.5%</td></tr><tr><td>전북</td><td>19,795</td><td>24,872</td><td>30,511</td><td>33,648</td><td>+25.6%</td><td>+22.7%</td><td>+10.3%</td><td>+24.2%</td></tr><tr><td>전남</td><td>24,200</td><td>31,417</td><td>41,322</td><td>45,162</td><td>+29.8%</td><td>+31.5%</td><td>+9.3%</td><td>+30.7%</td></tr><tr><td>경북</td><td>26,776</td><td>33,905</td><td>45,090</td><td>50,683</td><td>+26.6%</td><td>+33.0%</td><td>+12.4%</td><td>+29.8%</td></tr><tr><td><span class="tt">경남<span class="tt-body"><h4>경남(창원) : 전국 最高 보조금 한도</h4><ul><li><b>중대형 승용차 최대 1,850만원</b> (부산 810만원의 2.3배)</li><li>소형 1,010만원 · 초소형 400만원 · 화물차 최대 1,590만원</li><li>다자녀 국비 <b>최대 300만원 추가</b></li><li>배출 5등급 경유차 폐차 연계 <b>+200만원 추가</b></li><li>배경 : 탄소중립 교통도시 · 산업단지 대기질</li></ul><div class="tt-src">출처: <a href="https://www.cwtr.co.kr/news/articleView.html?idxno=13961" target="_blank">창원특례신문</a> · <a href="https://www.welfarehello.com/policy/8467c9b2-f065-42cd-abd1-c5a18c4ad5f4" target="_blank">웰로</a></div></span></span></td><td>36,225</td><td>46,628</td><td>65,934</td><td>74,025</td><td>+28.7%</td><td>+41.4%</td><td>+12.3%</td><td>+34.9%</td></tr><tr><td>제주</td><td>39,418</td><td>49,007</td><td>61,063</td><td>64,864</td><td>+24.3%</td><td>+24.6%</td><td>+6.2%</td><td>+24.5%</td></tr><tr><td><b>전국</b></td><td><b>543,900</b></td><td><b>684,244</b></td><td><b>899,101</b></td><td><b>981,321</b></td><td><b>+25.8%</b></td><td><b>+31.4%</b></td><td><b>+9.1%</b></td><td><b>+28.6%</b></td></tr>
+</tbody>
+</table>
+
+<h2>② 지역별 충전기 운영 대수 (2023 – 2026.1Q, 누적 기준)</h2>
+<div class="note">환경부 설치연도(year) 기준 누적. '26.1Q 열은 2026-04-23 snapshot 전체 (504,135기). 급/완속은 calc_capacity 30kW 기준.</div>
+<div class="row-flex">
+  <div class="chart-wrap"><canvas id="chartChargerFast" height="180"></canvas></div>
+  <div class="chart-wrap"><canvas id="chartChargerSlow" height="180"></canvas></div>
+</div>
+
+<h3 style="margin-top:24px;color:#be123c">② B. 면당 Capa 기준 (급속 75kW · 완속 7kW)</h3>
+<div class="note">개수 기준 vs capa 기준 비교. <b>개수 급속 비중 10.0% → capa 급속 비중 54.1%</b> ('26.1Q).</div>
+<div class="row-flex">
+  <div class="chart-wrap"><canvas id="chartCapaPeriod" height="180"></canvas></div>
+  <div class="chart-wrap"><canvas id="chartCapaShare" height="180"></canvas></div>
+</div>
+
+<h4 style="font-size:14px;color:#1e40af;margin-top:20px">표 2-1. 시점별 전국 NW Capa</h4>
+<table>
+<thead>
+<tr><th>시점</th><th>급속 기수</th><th>완속 기수</th><th>급속 Capa (MW)</th><th>완속 Capa (MW)</th><th>합계 Capa (MW)</th><th>급속 비중(개수)</th><th>급속 비중(Capa)</th></tr>
+</thead>
+<tbody>
+<tr><td>2023</td><td>34,311</td><td>241,561</td><td>2,573.3</td><td>1,690.9</td><td>4,264.3</td><td>12.4%</td><td><b>60.3%</b></td></tr><tr><td>2024</td><td>44,833</td><td>338,917</td><td>3,362.5</td><td>2,372.4</td><td>5,734.9</td><td>11.7%</td><td><b>58.6%</b></td></tr><tr><td>2025</td><td>49,734</td><td>422,137</td><td>3,730.1</td><td>2,955.0</td><td>6,685.0</td><td>10.5%</td><td><b>55.8%</b></td></tr><tr><td>2026.1Q</td><td>50,520</td><td>453,614</td><td>3,789.0</td><td>3,175.3</td><td>6,964.3</td><td>10.0%</td><td><b>54.4%</b></td></tr>
+</tbody>
+</table>
+
+<h4 style="font-size:14px;color:#1e40af;margin-top:20px">표 2-2. SKEL vs 전국 Capa ('26.1Q 기준)</h4>
+<table>
+<thead>
+<tr><th></th><th>급속 기수</th><th>완속 기수</th><th>합계 기수</th><th>급속 Capa (MW)</th><th>완속 Capa (MW)</th><th>합계 Capa (MW)</th><th>급속 Capa 비중</th></tr>
+</thead>
+<tbody>
+<tr><td style="text-align:left"><b>전국 NW</b> (75/7 가정)</td><td>50,520</td><td>453,614</td><td>504,134</td><td>3,789.0</td><td>3,175.3</td><td>6,964.3</td><td>54.4%</td></tr>
+<tr><td style="text-align:left"><b>SKEL</b> (실제 용량 sum)</td><td>5,098</td><td>4,689</td><td>9,787</td><td>369.7</td><td>32.9</td><td>402.6</td><td>91.8%</td></tr>
+<tr style="background:#fef3c7"><td style="text-align:left"><b>SKEL Share of 전국</b></td><td>10.09%</td><td>1.03%</td><td>1.94%</td><td>9.76%</td><td>1.04%</td><td>5.78%</td><td>–</td></tr>
+</tbody>
+</table>
+
+<h3>표 2. 시도별 충전기 누적 (4시점, 급속·완속·합계)</h3>
+<div style="overflow-x:auto"><table>
+<thead>
+<tr><th rowspan="2">시도</th><th colspan="3" class="split-th">2023</th><th colspan="3" class="split-th">2024</th><th colspan="3" class="split-th">2025</th><th colspan="3" class="split-th">2026.1Q</th></tr>
+<tr><th>급속</th><th>완속</th><th>합계</th><th>급속</th><th>완속</th><th>합계</th><th>급속</th><th>완속</th><th>합계</th><th>급속</th><th>완속</th><th>합계</th></tr>
+</thead>
+<tbody>
+<tr><td>서울</td><td>3,553</td><td>40,852</td><td>44,405</td><td>4,557</td><td>53,515</td><td>58,072</td><td>5,244</td><td>63,901</td><td>69,145</td><td>5,376</td><td>68,354</td><td>73,730</td></tr><tr><td><span class="tt">부산<span class="tt-body"><h4>부산 : 전국 최고 수준 보조금 + 차별화 제도</h4><ul><li><b>승용차 최대 810만원</b> + 국비 + 지역할인 결합 시 최대 100만원 추가 절감</li><li><b>전국 최초 '아이조아 부산조아'</b> (출산 가정 +150만원)</li><li><b>전국 최초 '지역할인제'</b> (판매점 50만원 + 시 50만원)</li><li>개인사업자 <b>1대 → 2대</b> 확대</li><li>2025 상반기 보급 <b>2,895대 (전년 동기 +58%)</b></li><li>배경 : 해양도시 미세먼지 · 탄소중립</li></ul><div class="tt-src">출처: <a href="https://www.khan.co.kr/article/202507141335001" target="_blank">경향신문 25.07</a> · <a href="https://www.busan.com/view/busan/view.php?code=2025071416374922347" target="_blank">부산일보 25.07</a></div></span></span></td><td>1,485</td><td>17,734</td><td>19,219</td><td>1,844</td><td>22,528</td><td>24,372</td><td>2,034</td><td>27,039</td><td>29,073</td><td>2,058</td><td>29,376</td><td>31,434</td></tr><tr><td>대구</td><td>1,509</td><td>12,167</td><td>13,676</td><td>1,697</td><td>16,597</td><td>18,294</td><td>1,761</td><td>20,456</td><td>22,217</td><td>1,781</td><td>22,033</td><td>23,814</td></tr><tr><td>인천</td><td>1,232</td><td>13,470</td><td>14,702</td><td>1,765</td><td>20,037</td><td>21,802</td><td>1,997</td><td>27,233</td><td>29,230</td><td>2,038</td><td>29,538</td><td>31,576</td></tr><tr><td>광주</td><td>746</td><td>6,830</td><td>7,576</td><td>1,003</td><td>10,431</td><td>11,434</td><td>1,085</td><td>12,717</td><td>13,802</td><td>1,103</td><td>14,028</td><td>15,131</td></tr><tr><td>대전</td><td>876</td><td>8,114</td><td>8,990</td><td>1,138</td><td>10,149</td><td>11,287</td><td>1,211</td><td>12,409</td><td>13,620</td><td>1,274</td><td>13,208</td><td>14,482</td></tr><tr><td>울산</td><td>819</td><td>4,594</td><td>5,413</td><td>977</td><td>6,526</td><td>7,503</td><td>1,033</td><td>8,742</td><td>9,775</td><td>1,040</td><td>9,282</td><td>10,322</td></tr><tr><td>세종</td><td>339</td><td>3,674</td><td>4,013</td><td>415</td><td>4,465</td><td>4,880</td><td>454</td><td>5,451</td><td>5,905</td><td>459</td><td>5,858</td><td>6,317</td></tr><tr><td>경기</td><td>7,395</td><td>68,035</td><td>75,430</td><td>10,456</td><td>100,542</td><td>110,998</td><td>12,015</td><td>127,467</td><td>139,482</td><td>12,263</td><td>137,315</td><td>149,578</td></tr><tr><td>강원</td><td>2,015</td><td>7,570</td><td>9,585</td><td>2,503</td><td>10,836</td><td>13,339</td><td>2,731</td><td>13,194</td><td>15,925</td><td>2,752</td><td>14,136</td><td>16,888</td></tr><tr><td>충북</td><td>1,601</td><td>7,055</td><td>8,656</td><td>2,088</td><td>10,167</td><td>12,255</td><td>2,243</td><td>13,620</td><td>15,863</td><td>2,297</td><td>14,414</td><td>16,711</td></tr><tr><td>충남</td><td>1,899</td><td>9,631</td><td>11,530</td><td>2,587</td><td>13,674</td><td>16,261</td><td>2,836</td><td>17,302</td><td>20,138</td><td>2,870</td><td>18,462</td><td>21,332</td></tr><tr><td>전북</td><td>1,923</td><td>7,478</td><td>9,401</td><td>2,542</td><td>11,096</td><td>13,638</td><td>2,794</td><td>13,426</td><td>16,220</td><td>2,827</td><td>14,226</td><td>17,053</td></tr><tr><td>전남</td><td>1,832</td><td>7,155</td><td>8,987</td><td>2,277</td><td>10,662</td><td>12,939</td><td>2,520</td><td>12,542</td><td>15,062</td><td>2,542</td><td>13,321</td><td>15,863</td></tr><tr><td>경북</td><td>2,955</td><td>9,611</td><td>12,566</td><td>3,641</td><td>13,616</td><td>17,257</td><td>3,946</td><td>16,483</td><td>20,429</td><td>3,969</td><td>17,697</td><td>21,666</td></tr><tr><td><span class="tt">경남<span class="tt-body"><h4>경남(창원) : 전국 最高 보조금 한도</h4><ul><li><b>중대형 승용차 최대 1,850만원</b> (부산 810만원의 2.3배)</li><li>소형 1,010만원 · 초소형 400만원 · 화물차 최대 1,590만원</li><li>다자녀 국비 <b>최대 300만원 추가</b></li><li>배출 5등급 경유차 폐차 연계 <b>+200만원 추가</b></li><li>배경 : 탄소중립 교통도시 · 산업단지 대기질</li></ul><div class="tt-src">출처: <a href="https://www.cwtr.co.kr/news/articleView.html?idxno=13961" target="_blank">창원특례신문</a> · <a href="https://www.welfarehello.com/policy/8467c9b2-f065-42cd-abd1-c5a18c4ad5f4" target="_blank">웰로</a></div></span></span></td><td>2,404</td><td>13,284</td><td>15,688</td><td>3,335</td><td>18,592</td><td>21,927</td><td>3,646</td><td>24,140</td><td>27,786</td><td>3,680</td><td>26,131</td><td>29,811</td></tr><tr><td>제주</td><td>1,728</td><td>4,307</td><td>6,035</td><td>2,008</td><td>5,484</td><td>7,492</td><td>2,184</td><td>6,015</td><td>8,199</td><td>2,191</td><td>6,235</td><td>8,426</td></tr><tr><td><b>전국</b></td><td><b>34,311</b></td><td><b>241,561</b></td><td><b>275,872</b></td><td><b>44,833</b></td><td><b>338,917</b></td><td><b>383,750</b></td><td><b>49,734</b></td><td><b>422,137</b></td><td><b>471,871</b></td><td><b>50,520</b></td><td><b>453,614</b></td><td><b>504,134</b></td></tr>
+</tbody>
+</table></div>
+
+<h2>③ 차충비 (EV / 충전기, 급·완속 구분)</h2>
+<div class="note">2025 전국 급속 18.08 → <b>Q1'26 19.45</b>: 급속 인프라가 EV 증가 속도에 미치지 못함. 완속도 2.13 → 2.16으로 악화.</div>
+<div class="row-flex">
+  <div class="chart-wrap"><canvas id="chartRatioFast" height="180"></canvas></div>
+  <div class="chart-wrap"><canvas id="chartRatioSlow" height="180"></canvas></div>
+</div>
+
+<h3>표 3. 시도별 차충비 (4시점, 대/기)</h3>
+<div style="overflow-x:auto"><table>
+<thead>
+<tr><th rowspan="2">시도</th><th colspan="3" class="split-th">2023</th><th colspan="3" class="split-th">2024</th><th colspan="3" class="split-th">2025</th><th colspan="3" class="split-th">2026.1Q</th></tr>
+<tr><th>급속</th><th>완속</th><th>합계</th><th>급속</th><th>완속</th><th>합계</th><th>급속</th><th>완속</th><th>합계</th><th>급속</th><th>완속</th><th>합계</th></tr>
+</thead>
+<tbody>
+<tr><td>서울</td><td>20.53</td><td>1.79</td><td>1.64</td><td>18.40</td><td>1.57</td><td>1.44</td><td>19.32</td><td>1.59</td><td>1.47</td><td>20.01</td><td>1.57</td><td>1.46</td></tr><tr><td><span class="tt">부산<span class="tt-body"><h4>부산 : 전국 최고 수준 보조금 + 차별화 제도</h4><ul><li><b>승용차 최대 810만원</b> + 국비 + 지역할인 결합 시 최대 100만원 추가 절감</li><li><b>전국 최초 '아이조아 부산조아'</b> (출산 가정 +150만원)</li><li><b>전국 최초 '지역할인제'</b> (판매점 50만원 + 시 50만원)</li><li>개인사업자 <b>1대 → 2대</b> 확대</li><li>2025 상반기 보급 <b>2,895대 (전년 동기 +58%)</b></li><li>배경 : 해양도시 미세먼지 · 탄소중립</li></ul><div class="tt-src">출처: <a href="https://www.khan.co.kr/article/202507141335001" target="_blank">경향신문 25.07</a> · <a href="https://www.busan.com/view/busan/view.php?code=2025071416374922347" target="_blank">부산일보 25.07</a></div></span></span></td><td>23.33</td><td>1.95</td><td>1.80</td><td>24.00</td><td>1.96</td><td>1.82</td><td>29.84</td><td>2.24</td><td>2.09</td><td>32.20</td><td>2.26</td><td>2.11</td></tr><tr><td>대구</td><td>20.14</td><td>2.50</td><td>2.22</td><td>20.75</td><td>2.12</td><td>1.92</td><td>24.19</td><td>2.08</td><td>1.92</td><td>25.25</td><td>2.04</td><td>1.89</td></tr><tr><td>인천</td><td>32.79</td><td>3.00</td><td>2.75</td><td>30.82</td><td>2.71</td><td>2.50</td><td>39.99</td><td>2.93</td><td>2.73</td><td>41.72</td><td>2.88</td><td>2.69</td></tr><tr><td>광주</td><td>16.81</td><td>1.84</td><td>1.65</td><td>15.19</td><td>1.46</td><td>1.33</td><td>17.62</td><td>1.50</td><td>1.38</td><td>19.22</td><td>1.51</td><td>1.40</td></tr><tr><td>대전</td><td>20.42</td><td>2.20</td><td>1.99</td><td>18.73</td><td>2.10</td><td>1.89</td><td>21.00</td><td>2.05</td><td>1.87</td><td>21.30</td><td>2.05</td><td>1.87</td></tr><tr><td>울산</td><td>9.57</td><td>1.71</td><td>1.45</td><td>10.05</td><td>1.50</td><td>1.31</td><td>12.91</td><td>1.53</td><td>1.36</td><td>14.16</td><td>1.59</td><td>1.43</td></tr><tr><td>세종</td><td>12.96</td><td>1.20</td><td>1.09</td><td>13.07</td><td>1.21</td><td>1.11</td><td>16.15</td><td>1.34</td><td>1.24</td><td>18.08</td><td>1.42</td><td>1.31</td></tr><tr><td>경기</td><td>15.43</td><td>1.68</td><td>1.51</td><td>14.52</td><td>1.51</td><td>1.37</td><td>17.23</td><td>1.62</td><td>1.48</td><td>18.59</td><td>1.66</td><td>1.52</td></tr><tr><td>강원</td><td>9.05</td><td>2.41</td><td>1.90</td><td>8.39</td><td>1.94</td><td>1.57</td><td>9.40</td><td>1.95</td><td>1.61</td><td>10.17</td><td>1.98</td><td>1.66</td></tr><tr><td>충북</td><td>12.47</td><td>2.83</td><td>2.31</td><td>12.15</td><td>2.50</td><td>2.07</td><td>14.67</td><td>2.42</td><td>2.07</td><td>16.06</td><td>2.56</td><td>2.21</td></tr><tr><td>충남</td><td>12.71</td><td>2.51</td><td>2.09</td><td>11.85</td><td>2.24</td><td>1.89</td><td>14.05</td><td>2.30</td><td>1.98</td><td>15.65</td><td>2.43</td><td>2.11</td></tr><tr><td>전북</td><td>10.29</td><td>2.65</td><td>2.11</td><td>9.78</td><td>2.24</td><td>1.82</td><td>10.92</td><td>2.27</td><td>1.88</td><td>11.90</td><td>2.37</td><td>1.97</td></tr><tr><td>전남</td><td>13.21</td><td>3.38</td><td>2.69</td><td>13.80</td><td>2.95</td><td>2.43</td><td>16.40</td><td>3.29</td><td>2.74</td><td>17.77</td><td>3.39</td><td>2.85</td></tr><tr><td>경북</td><td>9.06</td><td>2.79</td><td>2.13</td><td>9.31</td><td>2.49</td><td>1.96</td><td>11.43</td><td>2.74</td><td>2.21</td><td>12.77</td><td>2.86</td><td>2.34</td></tr><tr><td><span class="tt">경남<span class="tt-body"><h4>경남(창원) : 전국 最高 보조금 한도</h4><ul><li><b>중대형 승용차 최대 1,850만원</b> (부산 810만원의 2.3배)</li><li>소형 1,010만원 · 초소형 400만원 · 화물차 최대 1,590만원</li><li>다자녀 국비 <b>최대 300만원 추가</b></li><li>배출 5등급 경유차 폐차 연계 <b>+200만원 추가</b></li><li>배경 : 탄소중립 교통도시 · 산업단지 대기질</li></ul><div class="tt-src">출처: <a href="https://www.cwtr.co.kr/news/articleView.html?idxno=13961" target="_blank">창원특례신문</a> · <a href="https://www.welfarehello.com/policy/8467c9b2-f065-42cd-abd1-c5a18c4ad5f4" target="_blank">웰로</a></div></span></span></td><td>15.07</td><td>2.73</td><td>2.31</td><td>13.98</td><td>2.51</td><td>2.13</td><td>18.08</td><td>2.73</td><td>2.37</td><td>20.12</td><td>2.83</td><td>2.48</td></tr><tr><td>제주</td><td>22.81</td><td>9.15</td><td>6.53</td><td>24.41</td><td>8.94</td><td>6.54</td><td>27.96</td><td>10.15</td><td>7.45</td><td>29.60</td><td>10.40</td><td>7.70</td></tr><tr><td><b>전국</b></td><td><b>15.85</b></td><td><b>2.25</b></td><td><b>1.97</b></td><td><b>15.26</b></td><td><b>2.02</b></td><td><b>1.78</b></td><td><b>18.08</b></td><td><b>2.13</b></td><td><b>1.91</b></td><td><b>19.42</b></td><td><b>2.16</b></td><td><b>1.95</b></td></tr>
+</tbody>
+</table></div>
+
+<h2>④ SKEL NW 지역별 연평균 가동률 (24년 · 25년)</h2>
+<div class="note">SKEL 내부 대시보드의 연평균 가동률 (충전기 단순평균). 급/완속 30kW 기준. SKEL 2026 데이터 미발표 — 25년 기준 유지.</div>
+<div class="row-flex">
+  <div class="chart-wrap"><canvas id="chartSKELUtil" height="180"></canvas></div>
+  <div class="chart-wrap"><canvas id="chartSKELCount" height="180"></canvas></div>
+</div>
+
+<h3>표 4. SKEL 지역별 충전기 대수 및 가동률</h3>
+<table>
+<thead>
+<tr><th rowspan="2">시도</th><th colspan="3" class="split-th">급속</th><th colspan="3" class="split-th2">완속</th></tr>
+<tr><th>대수</th><th>24년 가동률</th><th>25년 가동률</th><th>대수</th><th>24년 가동률</th><th>25년 가동률</th></tr>
+</thead>
+<tbody>
+<tr><td>서울</td><td>531</td><td>6.26%</td><td>5.94%</td><td>522</td><td>7.07%</td><td>8.11%</td></tr><tr><td><span class="tt">부산<span class="tt-body"><h4>부산 : 전국 최고 수준 보조금 + 차별화 제도</h4><ul><li><b>승용차 최대 810만원</b> + 국비 + 지역할인 결합 시 최대 100만원 추가 절감</li><li><b>전국 최초 '아이조아 부산조아'</b> (출산 가정 +150만원)</li><li><b>전국 최초 '지역할인제'</b> (판매점 50만원 + 시 50만원)</li><li>개인사업자 <b>1대 → 2대</b> 확대</li><li>2025 상반기 보급 <b>2,895대 (전년 동기 +58%)</b></li><li>배경 : 해양도시 미세먼지 · 탄소중립</li></ul><div class="tt-src">출처: <a href="https://www.khan.co.kr/article/202507141335001" target="_blank">경향신문 25.07</a> · <a href="https://www.busan.com/view/busan/view.php?code=2025071416374922347" target="_blank">부산일보 25.07</a></div></span></span></td><td>308</td><td>4.68%</td><td>5.00%</td><td>484</td><td>6.07%</td><td>7.17%</td></tr><tr><td>대구</td><td>108</td><td>3.11%</td><td>3.33%</td><td>341</td><td>7.81%</td><td>8.48%</td></tr><tr><td>인천</td><td>302</td><td>5.05%</td><td>4.41%</td><td>107</td><td>5.67%</td><td>6.96%</td></tr><tr><td>광주</td><td>225</td><td>3.14%</td><td>3.00%</td><td>162</td><td>6.55%</td><td>6.96%</td></tr><tr><td>대전</td><td>116</td><td>3.05%</td><td>3.35%</td><td>137</td><td>6.76%</td><td>8.03%</td></tr><tr><td>울산</td><td>111</td><td>5.51%</td><td>4.42%</td><td>127</td><td>4.14%</td><td>5.99%</td></tr><tr><td>세종</td><td>18</td><td>2.83%</td><td>2.36%</td><td>15</td><td>9.12%</td><td>9.34%</td></tr><tr><td>경기</td><td>1,555</td><td>5.19%</td><td>4.43%</td><td>1,033</td><td>6.20%</td><td>7.69%</td></tr><tr><td>강원</td><td>310</td><td>3.74%</td><td>3.24%</td><td>233</td><td>4.76%</td><td>5.68%</td></tr><tr><td>충북</td><td>169</td><td>3.69%</td><td>3.81%</td><td>145</td><td>7.65%</td><td>7.95%</td></tr><tr><td>충남</td><td>250</td><td>3.16%</td><td>3.28%</td><td>266</td><td>6.02%</td><td>8.39%</td></tr><tr><td>전북</td><td>181</td><td>3.35%</td><td>3.20%</td><td>135</td><td>4.93%</td><td>5.52%</td></tr><tr><td>전남</td><td>126</td><td>2.12%</td><td>2.06%</td><td>104</td><td>6.07%</td><td>6.87%</td></tr><tr><td>경북</td><td>336</td><td>3.02%</td><td>3.25%</td><td>346</td><td>5.57%</td><td>6.90%</td></tr><tr><td><span class="tt">경남<span class="tt-body"><h4>경남(창원) : 전국 最高 보조금 한도</h4><ul><li><b>중대형 승용차 최대 1,850만원</b> (부산 810만원의 2.3배)</li><li>소형 1,010만원 · 초소형 400만원 · 화물차 최대 1,590만원</li><li>다자녀 국비 <b>최대 300만원 추가</b></li><li>배출 5등급 경유차 폐차 연계 <b>+200만원 추가</b></li><li>배경 : 탄소중립 교통도시 · 산업단지 대기질</li></ul><div class="tt-src">출처: <a href="https://www.cwtr.co.kr/news/articleView.html?idxno=13961" target="_blank">창원특례신문</a> · <a href="https://www.welfarehello.com/policy/8467c9b2-f065-42cd-abd1-c5a18c4ad5f4" target="_blank">웰로</a></div></span></span></td><td>267</td><td>3.70%</td><td>3.75%</td><td>373</td><td>5.48%</td><td>6.33%</td></tr><tr><td>제주</td><td>184</td><td>2.89%</td><td>3.16%</td><td>157</td><td>5.16%</td><td>6.50%</td></tr><tr><td><b>SKEL 전체</b></td><td><b>5,097</b></td><td><b>4.39%</b></td><td><b>4.09%</b></td><td><b>4,687</b></td><td><b>6.16%</b></td><td><b>7.33%</b></td></tr>
+</tbody>
+</table>
+
+<h2>⑤ 한전 전기차 충전용 전력 판매 (사업자용, 2019–2025)</h2>
+<div class="note">※ 한전 2026 실적 미발표. 본 섹션은 19–25 기준. 단가 320원/kWh 적용한 시장 규모도 함께.</div>
+
+<!-- 전체 판매량 연도별 요약 -->
+<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin:12px 0 18px;background:white;border:1px solid #e5e7eb;border-radius:8px;padding:14px 16px">
+  <div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:6px;padding:10px 12px;text-align:center"><div style="font-size:11px;color:#64748b;font-weight:600">2019</div><div style="font-size:18px;font-weight:800;color:#0f172a;margin:4px 0">137<span style="font-size:11px;color:#64748b;margin-left:3px">GWh</span></div><div style="font-size:11px;color:#64748b;font-weight:600">(YoY —)</div></div><div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:6px;padding:10px 12px;text-align:center"><div style="font-size:11px;color:#64748b;font-weight:600">2020</div><div style="font-size:18px;font-weight:800;color:#0f172a;margin:4px 0">236<span style="font-size:11px;color:#64748b;margin-left:3px">GWh</span></div><div style="font-size:11px;color:#dc2626;font-weight:600">(YoY +72.8%)</div></div><div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:6px;padding:10px 12px;text-align:center"><div style="font-size:11px;color:#64748b;font-weight:600">2021</div><div style="font-size:18px;font-weight:800;color:#0f172a;margin:4px 0">444<span style="font-size:11px;color:#64748b;margin-left:3px">GWh</span></div><div style="font-size:11px;color:#dc2626;font-weight:600">(YoY +87.8%)</div></div><div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:6px;padding:10px 12px;text-align:center"><div style="font-size:11px;color:#64748b;font-weight:600">2022</div><div style="font-size:18px;font-weight:800;color:#0f172a;margin:4px 0">940<span style="font-size:11px;color:#64748b;margin-left:3px">GWh</span></div><div style="font-size:11px;color:#dc2626;font-weight:600">(YoY +111.8%)</div></div><div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:6px;padding:10px 12px;text-align:center"><div style="font-size:11px;color:#64748b;font-weight:600">2023</div><div style="font-size:18px;font-weight:800;color:#0f172a;margin:4px 0">1,491<span style="font-size:11px;color:#64748b;margin-left:3px">GWh</span></div><div style="font-size:11px;color:#dc2626;font-weight:600">(YoY +58.5%)</div></div><div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:6px;padding:10px 12px;text-align:center"><div style="font-size:11px;color:#64748b;font-weight:600">2024</div><div style="font-size:18px;font-weight:800;color:#0f172a;margin:4px 0">2,089<span style="font-size:11px;color:#64748b;margin-left:3px">GWh</span></div><div style="font-size:11px;color:#dc2626;font-weight:600">(YoY +40.1%)</div></div><div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:6px;padding:10px 12px;text-align:center"><div style="font-size:11px;color:#64748b;font-weight:600">2025</div><div style="font-size:18px;font-weight:800;color:#0f172a;margin:4px 0">2,872<span style="font-size:11px;color:#64748b;margin-left:3px">GWh</span></div><div style="font-size:11px;color:#dc2626;font-weight:600">(YoY +37.5%)</div></div>
+</div>
+
+<div class="chart-wrap"><canvas id="chartBizVol" height="110"></canvas></div>
+<div class="chart-wrap"><canvas id="chartBizCAGR" height="80"></canvas></div>
+
+<h3>표 5. 시도별 사업자용 판매량 · '25 시장규모 · CAGR · Share</h3>
+<table>
+<thead>
+<tr><th>시도</th><th>2019</th><th>2020</th><th>2021</th><th>2022</th><th>2023</th><th>2024</th><th>2025</th><th>CAGR '22–'25</th><th>'25 Share</th><th>'25 시장규모<br>(억원)</th></tr>
+</thead>
+<tbody>
+<tr><td>서울</td><td>10.7</td><td>21.1</td><td>47.7</td><td>102.1</td><td>168.6</td><td>227.3</td><td>288.8</td><td>41.4%</td><td>10.06%</td><td>924</td></tr><tr><td><span class="tt">부산<span class="tt-body"><h4>부산 : 전국 최고 수준 보조금 + 차별화 제도</h4><ul><li><b>승용차 최대 810만원</b> + 국비 + 지역할인 결합 시 최대 100만원 추가 절감</li><li><b>전국 최초 '아이조아 부산조아'</b> (출산 가정 +150만원)</li><li><b>전국 최초 '지역할인제'</b> (판매점 50만원 + 시 50만원)</li><li>개인사업자 <b>1대 → 2대</b> 확대</li><li>2025 상반기 보급 <b>2,895대 (전년 동기 +58%)</b></li><li>배경 : 해양도시 미세먼지 · 탄소중립</li></ul><div class="tt-src">출처: <a href="https://www.khan.co.kr/article/202507141335001" target="_blank">경향신문 25.07</a> · <a href="https://www.busan.com/view/busan/view.php?code=2025071416374922347" target="_blank">부산일보 25.07</a></div></span></span></td><td>3.7</td><td>7.9</td><td>17.8</td><td>41.2</td><td>77.0</td><td>116.2</td><td>169.8</td><td>60.3%</td><td>5.91%</td><td>543</td></tr><tr><td>대구</td><td>17.7</td><td>21.2</td><td>28.3</td><td>49.8</td><td>74.7</td><td>95.8</td><td>119.7</td><td>34.0%</td><td>4.17%</td><td>383</td></tr><tr><td>인천</td><td>5.2</td><td>9.1</td><td>19.3</td><td>91.1</td><td>104.7</td><td>108.0</td><td>149.4</td><td>17.9%</td><td>5.20%</td><td>478</td></tr><tr><td>광주</td><td>2.9</td><td>5.9</td><td>11.4</td><td>23.2</td><td>37.0</td><td>51.4</td><td>69.1</td><td>43.9%</td><td>2.41%</td><td>221</td></tr><tr><td>대전</td><td>4.0</td><td>6.9</td><td>12.7</td><td>27.3</td><td>44.5</td><td>58.3</td><td>74.0</td><td>39.5%</td><td>2.58%</td><td>237</td></tr><tr><td>울산</td><td>1.7</td><td>2.7</td><td>4.2</td><td>10.7</td><td>20.1</td><td>30.5</td><td>45.7</td><td>62.2%</td><td>1.59%</td><td>146</td></tr><tr><td>세종</td><td>1.9</td><td>4.1</td><td>7.1</td><td>11.7</td><td>20.0</td><td>27.5</td><td>37.5</td><td>47.5%</td><td>1.31%</td><td>120</td></tr><tr><td>경기</td><td>28.3</td><td>58.3</td><td>122.6</td><td>270.4</td><td>462.7</td><td>706.8</td><td>1003.5</td><td>54.8%</td><td>34.95%</td><td>3,211</td></tr><tr><td>강원</td><td>4.0</td><td>7.3</td><td>14.9</td><td>33.7</td><td>55.0</td><td>82.1</td><td>110.5</td><td>48.5%</td><td>3.85%</td><td>354</td></tr><tr><td>충북</td><td>4.6</td><td>7.8</td><td>14.4</td><td>32.4</td><td>52.8</td><td>73.8</td><td>106.4</td><td>48.6%</td><td>3.70%</td><td>340</td></tr><tr><td>충남</td><td>6.0</td><td>10.3</td><td>18.7</td><td>36.9</td><td>59.1</td><td>84.7</td><td>117.2</td><td>47.0%</td><td>4.08%</td><td>375</td></tr><tr><td>전북</td><td>3.4</td><td>6.2</td><td>11.6</td><td>27.9</td><td>50.3</td><td>73.1</td><td>102.1</td><td>54.1%</td><td>3.56%</td><td>327</td></tr><tr><td>전남</td><td>5.2</td><td>7.8</td><td>12.1</td><td>24.1</td><td>38.7</td><td>55.4</td><td>78.5</td><td>48.1%</td><td>2.73%</td><td>251</td></tr><tr><td>경북</td><td>9.1</td><td>14.9</td><td>26.7</td><td>47.4</td><td>72.8</td><td>100.9</td><td>142.2</td><td>44.2%</td><td>4.95%</td><td>455</td></tr><tr><td><span class="tt">경남<span class="tt-body"><h4>경남(창원) : 전국 最高 보조금 한도</h4><ul><li><b>중대형 승용차 최대 1,850만원</b> (부산 810만원의 2.3배)</li><li>소형 1,010만원 · 초소형 400만원 · 화물차 최대 1,590만원</li><li>다자녀 국비 <b>최대 300만원 추가</b></li><li>배출 5등급 경유차 폐차 연계 <b>+200만원 추가</b></li><li>배경 : 탄소중립 교통도시 · 산업단지 대기질</li></ul><div class="tt-src">출처: <a href="https://www.cwtr.co.kr/news/articleView.html?idxno=13961" target="_blank">창원특례신문</a> · <a href="https://www.welfarehello.com/policy/8467c9b2-f065-42cd-abd1-c5a18c4ad5f4" target="_blank">웰로</a></div></span></span></td><td>10.2</td><td>22.5</td><td>40.5</td><td>68.2</td><td>102.9</td><td>139.8</td><td>187.2</td><td>40.0%</td><td>6.52%</td><td>599</td></tr><tr><td>제주</td><td>18.3</td><td>22.3</td><td>33.9</td><td>42.2</td><td>49.7</td><td>57.6</td><td>69.9</td><td>18.3%</td><td>2.44%</td><td>224</td></tr><tr><td><b>전국</b></td><td><b>136.8</b></td><td><b>236.4</b></td><td><b>444.0</b></td><td><b>940.5</b></td><td><b>1490.7</b></td><td><b>2089.2</b></td><td><b>2871.6</b></td><td><b>45.1%</b></td><td><b>100.0%</b></td><td><b>9,189</b></td></tr>
+</tbody>
+</table>
+
+
+<h2>⑥ Key Takeaways</h2>
+<div class="insights">
+<ul>
+  <li><b>EV Q1'26 가속화</b>: 전국 981,321, '25말 대비 <b>+9.1%</b> (순증 +82,220대). '23→'25 CAGR +28.6%. 충남 +12.8% · 세종 +13.2% · 경북 +12.4% · 경남 +12.3% 등 Q1 고성장.</li>
+  <li><b>충전기 Q1 증가율 (6.8%) &lt; EV 증가율 (9.1%)</b>: 전국 급속 차충비 '25 18.08 → Q1'26 19.45로 악화. <b>인프라 공급이 수요 따라가지 못함</b>.</li>
+  <li><b>매력 Top5</b>: 부산 · 경기 · 경남 · 인천 · 전남. 공격적 신규 투자 검토. Bottom5: 제주 · 세종 · 강원 · 광주 · 대전 — 기존 자산 효율화 모드로 전환 권고.</li>
+  <li><b>부산·경남 고성장 = 지방 보조금 효과 💬</b> (호버): 부산 Q1'26 +9.2% · 경남 +12.3%. '23→'25 CAGR 부산 32.4% · 경남 34.9%로 전국 평균(28.6%) 대비 우위 유지.</li>
+  <li><b>Capa 관점</b>: '26.1Q 전국 Capa 6,964 MW (급속 3,789 MW / 완속 3,175 MW). 급속 개수 비중 10.0% → Capa 비중 54.1%. SKEL Capa share 개수 1.9% → Capa 6.0% (3배 레버리지).</li>
+  <li><b>CPO 시장 규모</b>: '25 기준 단가 320원 적용 시 9,189억원. 한전 원가 4,873억 대비 CPO 유통 마진 약 4,316억원. '26 실적 Kepco 발표 후 업데이트 예정.</li>
+</ul>
+</div>
+
+<h2>⑦ 아파트 상면 충전기 Penetration (2023 – 2025)</h2>
+<div class="note"><b>분자</b>: 환경부 NW에서 <code>KindDetail(new) == '아파트'</code> 충전기 누적 · <b>분모</b>: K-apt 실측 주차면 (100세대↑, 세대당 1.048대 기준 연도별 역산) · 연도: <b>2023 · 2024 · 2025</b> 3시점 (법정 2% 달성 흐름 파악).</div>
+
+<div class="apt-grid">
+  <div class="chart-wrap">
+    <canvas id="chartAptPen" height="130"></canvas>
+    <h4 style="font-size:14px;color:#1e40af;margin-top:16px;padding-left:10px;border-left:4px solid #1e40af">표 7. 연도별 전국 아파트 Penetration</h4>
+    <table>
+      <thead>
+        <tr><th>연도</th><th>NW 아파트<br>충전기 (기)</th><th>급속</th><th>완속</th><th>아파트<br>세대수</th><th>아파트<br>주차면</th><th>Penetration</th></tr>
+      </thead>
+      <tbody>
+<tr><td>2023</td><td>183,036</td><td>1,734</td><td>181,302</td><td>11,465,512</td><td>12,013,658</td><td><b>1.52%</b></td></tr><tr><td>2024</td><td>251,614</td><td>2,333</td><td>249,281</td><td>11,809,478</td><td>12,374,068</td><td><b>2.03%</b></td></tr><tr><td>2025</td><td>321,537</td><td>2,607</td><td>318,930</td><td>12,163,762</td><td>12,745,290</td><td><b>2.52%</b></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="apt-logic">
+    <h4>🧮 주차면 산정 로직 (K-apt 주차면 only)</h4>
+
+    <h5>1. Anchor (K-apt 2026-04-17 추출)</h5>
+    <ul>
+      <li>단지 수 : <b>21,476개</b> (100세대↑ 공동주택)</li>
+      <li>총 세대 : <b>1,228만</b> (분양 1,067 + 임대 162)</li>
+      <li>총 주차면 : <b>1,287만</b> (지상 369 + 지하 918)</li>
+      <li>세대당 주차 (실측) : <b>1.048대</b></li>
+    </ul>
+
+    <h5>2. 연도별 역산 (전국 전체)</h5>
+    <ul>
+      <li>공식: <code>주차면(t) = 주차면('26.4) ÷ (1 + 3%)<sup>(26.4 - t)</sup></code></li>
+      <li>아파트 성장률 +3%/년 (통계청 '23 총조사 추세)</li>
+      <li>세대수 = 주차면 / 1.048</li>
+    </ul>
+
+    <h5>3. 연식별 세대당 주차 (K-apt 실측, 참고)</h5>
+    <table>
+      <thead><tr><th>연식</th><th>단지</th><th>세대당</th></tr></thead>
+      <tbody>
+        <tr><td>~1995 (30년↑)</td><td>5,058</td><td>0.66</td></tr>
+        <tr><td>1996–2005</td><td>6,482</td><td>1.01</td></tr>
+        <tr><td>2006–2015</td><td>4,671</td><td>1.26</td></tr>
+        <tr><td>2016–2020</td><td>2,848</td><td>1.20</td></tr>
+        <tr><td>2021–2025</td><td>2,363</td><td>1.21</td></tr>
+        <tr style="background:#fef3c7"><td><b>전체 평균</b></td><td><b>21,476</b></td><td><b>1.048</b></td></tr>
+      </tbody>
+    </table>
+
+    <h5>4. 법정 의무 (친환경차법)</h5>
+    <ul>
+      <li>신축 (100세대↑, 2022.1↑) : 총 주차면 <b>5% 이상</b></li>
+      <li>기존 (2024.1 시행) : <b>2% 이상</b></li>
+      <li>'25 전국 <b>2.52%</b> → 2% 초과 달성. 5%까지 <b>약 31.3만 상면 추가 여력</b></li>
+    </ul>
+
+    <h5>5. Caveat</h5>
+    <ul>
+      <li>100세대 미만 공동주택 제외 (~2.5% 가정)</li>
+      <li>K-apt data 중 <b>전기차 관련 항목 (EV전용면·K-apt 충전기)은 out-dated이라 본 분석에 미포함</b>. 주차면·세대수만 활용.</li>
+      <li>NW 분자는 환경부 공공데이터 ('26-04-23 snapshot)</li>
+    </ul>
+
+    <div class="src">
+      출처: <a href="https://www.k-apt.go.kr/" target="_blank">K-apt 공동주택관리정보시스템</a> (단지기본정보, 2026-04-17 · 주차면만 활용) · <a href="https://www.data.go.kr/data/15052594/fileData.do" target="_blank">환경부 전기차충전소</a>
+    </div>
+  </div>
+</div>
+
+<h3 style="margin-top:28px;color:#be123c">⑦ B. 시도별 아파트 Penetration ('25 기준)</h3>
+<div class="note">시도별 K-apt 실측 주차면 (25말 역산) ÷ 환경부 NW 아파트 충전기 ('25말 누적). 아래 <b>탭 클릭/호버</b>로 지역별 상세.</div>
+
+<div class="chart-wrap"><canvas id="chartKaptPenSimple" height="140"></canvas></div>
+
+<div class="kapt-tabs">
+  <button class="kapt-tab kapt-tab-nation active" data-sido="전국">🇰🇷 전국</button>
+  <button class="kapt-tab" data-sido="서울">서울</button><button class="kapt-tab" data-sido="부산">부산</button><button class="kapt-tab" data-sido="대구">대구</button><button class="kapt-tab" data-sido="인천">인천</button><button class="kapt-tab" data-sido="광주">광주</button><button class="kapt-tab" data-sido="대전">대전</button><button class="kapt-tab" data-sido="울산">울산</button><button class="kapt-tab" data-sido="세종">세종</button><button class="kapt-tab" data-sido="경기">경기</button><button class="kapt-tab" data-sido="강원">강원</button><button class="kapt-tab" data-sido="충북">충북</button><button class="kapt-tab" data-sido="충남">충남</button><button class="kapt-tab" data-sido="전북">전북</button><button class="kapt-tab" data-sido="전남">전남</button><button class="kapt-tab" data-sido="경북">경북</button><button class="kapt-tab" data-sido="경남">경남</button><button class="kapt-tab" data-sido="제주">제주</button>
+</div>
+
+<div class="kapt-panel">
+  <div class="kapt-panel-header">
+    <h3 id="kaptPanelTitle">🇰🇷 전국</h3>
+    <span class="sub" id="kaptPanelSub">K-apt 100세대↑ × 환경부 NW 아파트 ('25말)</span>
+  </div>
+
+  <div class="kapt-kpi-grid">
+    <div class="kapt-mini-kpi"><div class="lbl">K-apt 단지 수</div><div class="val" id="kp-cnt">-</div><div class="sub" id="kp-cnt-share">-</div></div>
+    <div class="kapt-mini-kpi"><div class="lbl">K-apt 세대수</div><div class="val" id="kp-units">-</div><div class="sub" id="kp-units-share">-</div></div>
+    <div class="kapt-mini-kpi"><div class="lbl">주차면 ('25말)</div><div class="val" id="kp-parking">-</div><div class="sub" id="kp-per-unit">세대당 -대</div></div>
+    <div class="kapt-mini-kpi hl-red"><div class="lbl">NW 아파트 충전기 ('25말)</div><div class="val" id="kp-nw">-</div><div class="sub">환경부 공공데이터</div></div>
+    <div class="kapt-mini-kpi hl-green"><div class="lbl">Penetration</div><div class="val" id="kp-pen">-</div><div class="sub" id="kp-pen-vs-nat">전국 - vs 지역 -</div></div>
+    <div class="kapt-mini-kpi"><div class="lbl">법정 5% Gap</div><div class="val" id="kp-gap">-</div><div class="sub">추가 설치 여력</div></div>
+  </div>
+
+  <div class="kapt-two-col">
+    <div><canvas id="chartKaptDetail" height="170"></canvas></div>
+    <div>
+      <h4 style="margin:0 0 8px;font-size:14px;color:#1e40af;border-left:4px solid #1e40af;padding-left:10px">전국 Benchmark 대비</h4>
+      <table style="font-size:12px;margin-top:4px">
+        <thead><tr><th>지표</th><th>지역</th><th>전국</th><th>비교</th></tr></thead>
+        <tbody id="kp-benchmark"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<details style="margin-top:10px">
+<summary style="cursor:pointer;font-weight:600;color:#1e40af;padding:8px 12px;background:#f1f5f9;border-radius:6px">표 7-2. 시도별 상세 ('25 기준, 전체 17 시도)</summary>
+<div style="overflow-x:auto;margin-top:8px">
+<table>
+<thead>
+<tr><th>시도</th><th>단지수</th><th>세대수</th><th>'25 주차면</th><th>NW 아파트 ('25)</th><th>Penetration</th></tr>
+</thead>
+<tbody>
+<tr><td>서울</td><td>3,140</td><td>1,745,961</td><td>1,776,479</td><td>49,020</td><td><b>2.76%</b></td></tr><tr><td><span class="tt">부산<span class="tt-body"><h4>부산 : 전국 최고 수준 보조금 + 차별화 제도</h4><ul><li><b>승용차 최대 810만원</b> + 국비 + 지역할인 결합 시 최대 100만원 추가 절감</li><li><b>전국 최초 '아이조아 부산조아'</b> (출산 가정 +150만원)</li><li><b>전국 최초 '지역할인제'</b> (판매점 50만원 + 시 50만원)</li><li>개인사업자 <b>1대 → 2대</b> 확대</li><li>2025 상반기 보급 <b>2,895대 (전년 동기 +58%)</b></li><li>배경 : 해양도시 미세먼지 · 탄소중립</li></ul><div class="tt-src">출처: <a href="https://www.khan.co.kr/article/202507141335001" target="_blank">경향신문 25.07</a> · <a href="https://www.busan.com/view/busan/view.php?code=2025071416374922347" target="_blank">부산일보 25.07</a></div></span></span></td><td>1,431</td><td>826,161</td><td>825,978</td><td>22,430</td><td><b>2.72%</b></td></tr><tr><td>대구</td><td>1,162</td><td>661,500</td><td>743,458</td><td>17,597</td><td><b>2.37%</b></td></tr><tr><td>인천</td><td>1,108</td><td>759,134</td><td>808,744</td><td>20,585</td><td><b>2.55%</b></td></tr><tr><td>광주</td><td>926</td><td>453,120</td><td>452,339</td><td>10,396</td><td><b>2.30%</b></td></tr><tr><td>대전</td><td>582</td><td>386,650</td><td>403,027</td><td>9,245</td><td><b>2.29%</b></td></tr><tr><td>울산</td><td>535</td><td>264,903</td><td>265,461</td><td>6,954</td><td><b>2.62%</b></td></tr><tr><td>세종</td><td>215</td><td>136,822</td><td>173,910</td><td>4,455</td><td><b>2.56%</b></td></tr><tr><td>경기</td><td>5,508</td><td>3,558,805</td><td>3,894,806</td><td>99,416</td><td><b>2.55%</b></td></tr><tr><td>강원</td><td>827</td><td>372,154</td><td>353,856</td><td>8,127</td><td><b>2.30%</b></td></tr><tr><td>충북</td><td>779</td><td>410,032</td><td>416,951</td><td>10,618</td><td><b>2.55%</b></td></tr><tr><td>충남</td><td>981</td><td>549,095</td><td>544,446</td><td>12,589</td><td><b>2.31%</b></td></tr><tr><td>전북</td><td>866</td><td>425,375</td><td>409,443</td><td>9,721</td><td><b>2.37%</b></td></tr><tr><td>전남</td><td>772</td><td>382,323</td><td>349,489</td><td>8,037</td><td><b>2.30%</b></td></tr><tr><td>경북</td><td>1,036</td><td>519,507</td><td>513,452</td><td>11,861</td><td><b>2.31%</b></td></tr><tr><td><span class="tt">경남<span class="tt-body"><h4>경남(창원) : 전국 最高 보조금 한도</h4><ul><li><b>중대형 승용차 최대 1,850만원</b> (부산 810만원의 2.3배)</li><li>소형 1,010만원 · 초소형 400만원 · 화물차 최대 1,590만원</li><li>다자녀 국비 <b>최대 300만원 추가</b></li><li>배출 5등급 경유차 폐차 연계 <b>+200만원 추가</b></li><li>배경 : 탄소중립 교통도시 · 산업단지 대기질</li></ul><div class="tt-src">출처: <a href="https://www.cwtr.co.kr/news/articleView.html?idxno=13961" target="_blank">창원특례신문</a> · <a href="https://www.welfarehello.com/policy/8467c9b2-f065-42cd-abd1-c5a18c4ad5f4" target="_blank">웰로</a></div></span></span></td><td>1,432</td><td>777,343</td><td>760,813</td><td>17,812</td><td><b>2.34%</b></td></tr><tr><td>제주</td><td>176</td><td>55,318</td><td>52,636</td><td>2,674</td><td><b>5.08%</b></td></tr><tr><td><b>전국</b></td><td><b>21,476</b></td><td><b>12,284,203</b></td><td><b>12,745,290</b></td><td><b>321,537</b></td><td><b>2.52%</b></td></tr>
+</tbody>
+</table>
+</div>
+</details>
+
+<script>
+const DATA = {"sido_order": ["서울", "부산", "대구", "인천", "광주", "대전", "울산", "세종", "경기", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주"], "periods": [2023, 2024, 2025, "26Q1"], "periods_label": {"2023": "2023", "2024": "2024", "2025": "2025", "26Q1": "2026.1Q"}, "ev_by_sido": {"서울": {"2023": 72937, "2024": 83868, "2025": 101331, "26Q1": 107565}, "부산": {"2023": 34643, "2024": 44259, "2025": 60687, "26Q1": 66268}, "대구": {"2023": 30396, "2024": 35212, "2025": 42592, "26Q1": 44972}, "인천": {"2023": 40397, "2024": 54398, "2025": 79860, "26Q1": 85029}, "광주": {"2023": 12538, "2024": 15240, "2025": 19115, "26Q1": 21196}, "대전": {"2023": 17889, "2024": 21314, "2025": 25432, "26Q1": 27134}, "울산": {"2023": 7838, "2024": 9817, "2025": 13340, "26Q1": 14730}, "세종": {"2023": 4393, "2024": 5424, "2025": 7330, "26Q1": 8300}, "경기": {"2023": 114117, "2024": 151850, "2025": 207075, "26Q1": 227933}, "강원": {"2023": 18236, "2024": 21004, "2025": 25679, "26Q1": 27998}, "충북": {"2023": 19972, "2024": 25375, "2025": 32901, "26Q1": 36894}, "충남": {"2023": 24130, "2024": 30654, "2025": 39839, "26Q1": 44920}, "전북": {"2023": 19795, "2024": 24872, "2025": 30511, "26Q1": 33648}, "전남": {"2023": 24200, "2024": 31417, "2025": 41322, "26Q1": 45162}, "경북": {"2023": 26776, "2024": 33905, "2025": 45090, "26Q1": 50683}, "경남": {"2023": 36225, "2024": 46628, "2025": 65934, "26Q1": 74025}, "제주": {"2023": 39418, "2024": 49007, "2025": 61063, "26Q1": 64864}}, "charger_by_sido": {"서울": {"2023": {"급속": 3553, "완속": 40852, "합계": 44405}, "2024": {"급속": 4557, "완속": 53515, "합계": 58072}, "2025": {"급속": 5244, "완속": 63901, "합계": 69145}, "26Q1": {"급속": 5376, "완속": 68354, "합계": 73730}}, "부산": {"2023": {"급속": 1485, "완속": 17734, "합계": 19219}, "2024": {"급속": 1844, "완속": 22528, "합계": 24372}, "2025": {"급속": 2034, "완속": 27039, "합계": 29073}, "26Q1": {"급속": 2058, "완속": 29376, "합계": 31434}}, "대구": {"2023": {"급속": 1509, "완속": 12167, "합계": 13676}, "2024": {"급속": 1697, "완속": 16597, "합계": 18294}, "2025": {"급속": 1761, "완속": 20456, "합계": 22217}, "26Q1": {"급속": 1781, "완속": 22033, "합계": 23814}}, "인천": {"2023": {"급속": 1232, "완속": 13470, "합계": 14702}, "2024": {"급속": 1765, "완속": 20037, "합계": 21802}, "2025": {"급속": 1997, "완속": 27233, "합계": 29230}, "26Q1": {"급속": 2038, "완속": 29538, "합계": 31576}}, "광주": {"2023": {"급속": 746, "완속": 6830, "합계": 7576}, "2024": {"급속": 1003, "완속": 10431, "합계": 11434}, "2025": {"급속": 1085, "완속": 12717, "합계": 13802}, "26Q1": {"급속": 1103, "완속": 14028, "합계": 15131}}, "대전": {"2023": {"급속": 876, "완속": 8114, "합계": 8990}, "2024": {"급속": 1138, "완속": 10149, "합계": 11287}, "2025": {"급속": 1211, "완속": 12409, "합계": 13620}, "26Q1": {"급속": 1274, "완속": 13208, "합계": 14482}}, "울산": {"2023": {"급속": 819, "완속": 4594, "합계": 5413}, "2024": {"급속": 977, "완속": 6526, "합계": 7503}, "2025": {"급속": 1033, "완속": 8742, "합계": 9775}, "26Q1": {"급속": 1040, "완속": 9282, "합계": 10322}}, "세종": {"2023": {"급속": 339, "완속": 3674, "합계": 4013}, "2024": {"급속": 415, "완속": 4465, "합계": 4880}, "2025": {"급속": 454, "완속": 5451, "합계": 5905}, "26Q1": {"급속": 459, "완속": 5858, "합계": 6317}}, "경기": {"2023": {"급속": 7395, "완속": 68035, "합계": 75430}, "2024": {"급속": 10456, "완속": 100542, "합계": 110998}, "2025": {"급속": 12015, "완속": 127467, "합계": 139482}, "26Q1": {"급속": 12263, "완속": 137315, "합계": 149578}}, "강원": {"2023": {"급속": 2015, "완속": 7570, "합계": 9585}, "2024": {"급속": 2503, "완속": 10836, "합계": 13339}, "2025": {"급속": 2731, "완속": 13194, "합계": 15925}, "26Q1": {"급속": 2752, "완속": 14136, "합계": 16888}}, "충북": {"2023": {"급속": 1601, "완속": 7055, "합계": 8656}, "2024": {"급속": 2088, "완속": 10167, "합계": 12255}, "2025": {"급속": 2243, "완속": 13620, "합계": 15863}, "26Q1": {"급속": 2297, "완속": 14414, "합계": 16711}}, "충남": {"2023": {"급속": 1899, "완속": 9631, "합계": 11530}, "2024": {"급속": 2587, "완속": 13674, "합계": 16261}, "2025": {"급속": 2836, "완속": 17302, "합계": 20138}, "26Q1": {"급속": 2870, "완속": 18462, "합계": 21332}}, "전북": {"2023": {"급속": 1923, "완속": 7478, "합계": 9401}, "2024": {"급속": 2542, "완속": 11096, "합계": 13638}, "2025": {"급속": 2794, "완속": 13426, "합계": 16220}, "26Q1": {"급속": 2827, "완속": 14226, "합계": 17053}}, "전남": {"2023": {"급속": 1832, "완속": 7155, "합계": 8987}, "2024": {"급속": 2277, "완속": 10662, "합계": 12939}, "2025": {"급속": 2520, "완속": 12542, "합계": 15062}, "26Q1": {"급속": 2542, "완속": 13321, "합계": 15863}}, "경북": {"2023": {"급속": 2955, "완속": 9611, "합계": 12566}, "2024": {"급속": 3641, "완속": 13616, "합계": 17257}, "2025": {"급속": 3946, "완속": 16483, "합계": 20429}, "26Q1": {"급속": 3969, "완속": 17697, "합계": 21666}}, "경남": {"2023": {"급속": 2404, "완속": 13284, "합계": 15688}, "2024": {"급속": 3335, "완속": 18592, "합계": 21927}, "2025": {"급속": 3646, "완속": 24140, "합계": 27786}, "26Q1": {"급속": 3680, "완속": 26131, "합계": 29811}}, "제주": {"2023": {"급속": 1728, "완속": 4307, "합계": 6035}, "2024": {"급속": 2008, "완속": 5484, "합계": 7492}, "2025": {"급속": 2184, "완속": 6015, "합계": 8199}, "26Q1": {"급속": 2191, "완속": 6235, "합계": 8426}}}, "ratio": {"서울": {"2023": {"ev": 72937, "fast_chg": 3553, "slow_chg": 40852, "total_chg": 44405, "ev_per_fast": 20.53, "ev_per_slow": 1.79, "ev_per_total": 1.64}, "2024": {"ev": 83868, "fast_chg": 4557, "slow_chg": 53515, "total_chg": 58072, "ev_per_fast": 18.4, "ev_per_slow": 1.57, "ev_per_total": 1.44}, "2025": {"ev": 101331, "fast_chg": 5244, "slow_chg": 63901, "total_chg": 69145, "ev_per_fast": 19.32, "ev_per_slow": 1.59, "ev_per_total": 1.47}, "26Q1": {"ev": 107565, "fast_chg": 5376, "slow_chg": 68354, "total_chg": 73730, "ev_per_fast": 20.01, "ev_per_slow": 1.57, "ev_per_total": 1.46}}, "부산": {"2023": {"ev": 34643, "fast_chg": 1485, "slow_chg": 17734, "total_chg": 19219, "ev_per_fast": 23.33, "ev_per_slow": 1.95, "ev_per_total": 1.8}, "2024": {"ev": 44259, "fast_chg": 1844, "slow_chg": 22528, "total_chg": 24372, "ev_per_fast": 24.0, "ev_per_slow": 1.96, "ev_per_total": 1.82}, "2025": {"ev": 60687, "fast_chg": 2034, "slow_chg": 27039, "total_chg": 29073, "ev_per_fast": 29.84, "ev_per_slow": 2.24, "ev_per_total": 2.09}, "26Q1": {"ev": 66268, "fast_chg": 2058, "slow_chg": 29376, "total_chg": 31434, "ev_per_fast": 32.2, "ev_per_slow": 2.26, "ev_per_total": 2.11}}, "대구": {"2023": {"ev": 30396, "fast_chg": 1509, "slow_chg": 12167, "total_chg": 13676, "ev_per_fast": 20.14, "ev_per_slow": 2.5, "ev_per_total": 2.22}, "2024": {"ev": 35212, "fast_chg": 1697, "slow_chg": 16597, "total_chg": 18294, "ev_per_fast": 20.75, "ev_per_slow": 2.12, "ev_per_total": 1.92}, "2025": {"ev": 42592, "fast_chg": 1761, "slow_chg": 20456, "total_chg": 22217, "ev_per_fast": 24.19, "ev_per_slow": 2.08, "ev_per_total": 1.92}, "26Q1": {"ev": 44972, "fast_chg": 1781, "slow_chg": 22033, "total_chg": 23814, "ev_per_fast": 25.25, "ev_per_slow": 2.04, "ev_per_total": 1.89}}, "인천": {"2023": {"ev": 40397, "fast_chg": 1232, "slow_chg": 13470, "total_chg": 14702, "ev_per_fast": 32.79, "ev_per_slow": 3.0, "ev_per_total": 2.75}, "2024": {"ev": 54398, "fast_chg": 1765, "slow_chg": 20037, "total_chg": 21802, "ev_per_fast": 30.82, "ev_per_slow": 2.71, "ev_per_total": 2.5}, "2025": {"ev": 79860, "fast_chg": 1997, "slow_chg": 27233, "total_chg": 29230, "ev_per_fast": 39.99, "ev_per_slow": 2.93, "ev_per_total": 2.73}, "26Q1": {"ev": 85029, "fast_chg": 2038, "slow_chg": 29538, "total_chg": 31576, "ev_per_fast": 41.72, "ev_per_slow": 2.88, "ev_per_total": 2.69}}, "광주": {"2023": {"ev": 12538, "fast_chg": 746, "slow_chg": 6830, "total_chg": 7576, "ev_per_fast": 16.81, "ev_per_slow": 1.84, "ev_per_total": 1.65}, "2024": {"ev": 15240, "fast_chg": 1003, "slow_chg": 10431, "total_chg": 11434, "ev_per_fast": 15.19, "ev_per_slow": 1.46, "ev_per_total": 1.33}, "2025": {"ev": 19115, "fast_chg": 1085, "slow_chg": 12717, "total_chg": 13802, "ev_per_fast": 17.62, "ev_per_slow": 1.5, "ev_per_total": 1.38}, "26Q1": {"ev": 21196, "fast_chg": 1103, "slow_chg": 14028, "total_chg": 15131, "ev_per_fast": 19.22, "ev_per_slow": 1.51, "ev_per_total": 1.4}}, "대전": {"2023": {"ev": 17889, "fast_chg": 876, "slow_chg": 8114, "total_chg": 8990, "ev_per_fast": 20.42, "ev_per_slow": 2.2, "ev_per_total": 1.99}, "2024": {"ev": 21314, "fast_chg": 1138, "slow_chg": 10149, "total_chg": 11287, "ev_per_fast": 18.73, "ev_per_slow": 2.1, "ev_per_total": 1.89}, "2025": {"ev": 25432, "fast_chg": 1211, "slow_chg": 12409, "total_chg": 13620, "ev_per_fast": 21.0, "ev_per_slow": 2.05, "ev_per_total": 1.87}, "26Q1": {"ev": 27134, "fast_chg": 1274, "slow_chg": 13208, "total_chg": 14482, "ev_per_fast": 21.3, "ev_per_slow": 2.05, "ev_per_total": 1.87}}, "울산": {"2023": {"ev": 7838, "fast_chg": 819, "slow_chg": 4594, "total_chg": 5413, "ev_per_fast": 9.57, "ev_per_slow": 1.71, "ev_per_total": 1.45}, "2024": {"ev": 9817, "fast_chg": 977, "slow_chg": 6526, "total_chg": 7503, "ev_per_fast": 10.05, "ev_per_slow": 1.5, "ev_per_total": 1.31}, "2025": {"ev": 13340, "fast_chg": 1033, "slow_chg": 8742, "total_chg": 9775, "ev_per_fast": 12.91, "ev_per_slow": 1.53, "ev_per_total": 1.36}, "26Q1": {"ev": 14730, "fast_chg": 1040, "slow_chg": 9282, "total_chg": 10322, "ev_per_fast": 14.16, "ev_per_slow": 1.59, "ev_per_total": 1.43}}, "세종": {"2023": {"ev": 4393, "fast_chg": 339, "slow_chg": 3674, "total_chg": 4013, "ev_per_fast": 12.96, "ev_per_slow": 1.2, "ev_per_total": 1.09}, "2024": {"ev": 5424, "fast_chg": 415, "slow_chg": 4465, "total_chg": 4880, "ev_per_fast": 13.07, "ev_per_slow": 1.21, "ev_per_total": 1.11}, "2025": {"ev": 7330, "fast_chg": 454, "slow_chg": 5451, "total_chg": 5905, "ev_per_fast": 16.15, "ev_per_slow": 1.34, "ev_per_total": 1.24}, "26Q1": {"ev": 8300, "fast_chg": 459, "slow_chg": 5858, "total_chg": 6317, "ev_per_fast": 18.08, "ev_per_slow": 1.42, "ev_per_total": 1.31}}, "경기": {"2023": {"ev": 114117, "fast_chg": 7395, "slow_chg": 68035, "total_chg": 75430, "ev_per_fast": 15.43, "ev_per_slow": 1.68, "ev_per_total": 1.51}, "2024": {"ev": 151850, "fast_chg": 10456, "slow_chg": 100542, "total_chg": 110998, "ev_per_fast": 14.52, "ev_per_slow": 1.51, "ev_per_total": 1.37}, "2025": {"ev": 207075, "fast_chg": 12015, "slow_chg": 127467, "total_chg": 139482, "ev_per_fast": 17.23, "ev_per_slow": 1.62, "ev_per_total": 1.48}, "26Q1": {"ev": 227933, "fast_chg": 12263, "slow_chg": 137315, "total_chg": 149578, "ev_per_fast": 18.59, "ev_per_slow": 1.66, "ev_per_total": 1.52}}, "강원": {"2023": {"ev": 18236, "fast_chg": 2015, "slow_chg": 7570, "total_chg": 9585, "ev_per_fast": 9.05, "ev_per_slow": 2.41, "ev_per_total": 1.9}, "2024": {"ev": 21004, "fast_chg": 2503, "slow_chg": 10836, "total_chg": 13339, "ev_per_fast": 8.39, "ev_per_slow": 1.94, "ev_per_total": 1.57}, "2025": {"ev": 25679, "fast_chg": 2731, "slow_chg": 13194, "total_chg": 15925, "ev_per_fast": 9.4, "ev_per_slow": 1.95, "ev_per_total": 1.61}, "26Q1": {"ev": 27998, "fast_chg": 2752, "slow_chg": 14136, "total_chg": 16888, "ev_per_fast": 10.17, "ev_per_slow": 1.98, "ev_per_total": 1.66}}, "충북": {"2023": {"ev": 19972, "fast_chg": 1601, "slow_chg": 7055, "total_chg": 8656, "ev_per_fast": 12.47, "ev_per_slow": 2.83, "ev_per_total": 2.31}, "2024": {"ev": 25375, "fast_chg": 2088, "slow_chg": 10167, "total_chg": 12255, "ev_per_fast": 12.15, "ev_per_slow": 2.5, "ev_per_total": 2.07}, "2025": {"ev": 32901, "fast_chg": 2243, "slow_chg": 13620, "total_chg": 15863, "ev_per_fast": 14.67, "ev_per_slow": 2.42, "ev_per_total": 2.07}, "26Q1": {"ev": 36894, "fast_chg": 2297, "slow_chg": 14414, "total_chg": 16711, "ev_per_fast": 16.06, "ev_per_slow": 2.56, "ev_per_total": 2.21}}, "충남": {"2023": {"ev": 24130, "fast_chg": 1899, "slow_chg": 9631, "total_chg": 11530, "ev_per_fast": 12.71, "ev_per_slow": 2.51, "ev_per_total": 2.09}, "2024": {"ev": 30654, "fast_chg": 2587, "slow_chg": 13674, "total_chg": 16261, "ev_per_fast": 11.85, "ev_per_slow": 2.24, "ev_per_total": 1.89}, "2025": {"ev": 39839, "fast_chg": 2836, "slow_chg": 17302, "total_chg": 20138, "ev_per_fast": 14.05, "ev_per_slow": 2.3, "ev_per_total": 1.98}, "26Q1": {"ev": 44920, "fast_chg": 2870, "slow_chg": 18462, "total_chg": 21332, "ev_per_fast": 15.65, "ev_per_slow": 2.43, "ev_per_total": 2.11}}, "전북": {"2023": {"ev": 19795, "fast_chg": 1923, "slow_chg": 7478, "total_chg": 9401, "ev_per_fast": 10.29, "ev_per_slow": 2.65, "ev_per_total": 2.11}, "2024": {"ev": 24872, "fast_chg": 2542, "slow_chg": 11096, "total_chg": 13638, "ev_per_fast": 9.78, "ev_per_slow": 2.24, "ev_per_total": 1.82}, "2025": {"ev": 30511, "fast_chg": 2794, "slow_chg": 13426, "total_chg": 16220, "ev_per_fast": 10.92, "ev_per_slow": 2.27, "ev_per_total": 1.88}, "26Q1": {"ev": 33648, "fast_chg": 2827, "slow_chg": 14226, "total_chg": 17053, "ev_per_fast": 11.9, "ev_per_slow": 2.37, "ev_per_total": 1.97}}, "전남": {"2023": {"ev": 24200, "fast_chg": 1832, "slow_chg": 7155, "total_chg": 8987, "ev_per_fast": 13.21, "ev_per_slow": 3.38, "ev_per_total": 2.69}, "2024": {"ev": 31417, "fast_chg": 2277, "slow_chg": 10662, "total_chg": 12939, "ev_per_fast": 13.8, "ev_per_slow": 2.95, "ev_per_total": 2.43}, "2025": {"ev": 41322, "fast_chg": 2520, "slow_chg": 12542, "total_chg": 15062, "ev_per_fast": 16.4, "ev_per_slow": 3.29, "ev_per_total": 2.74}, "26Q1": {"ev": 45162, "fast_chg": 2542, "slow_chg": 13321, "total_chg": 15863, "ev_per_fast": 17.77, "ev_per_slow": 3.39, "ev_per_total": 2.85}}, "경북": {"2023": {"ev": 26776, "fast_chg": 2955, "slow_chg": 9611, "total_chg": 12566, "ev_per_fast": 9.06, "ev_per_slow": 2.79, "ev_per_total": 2.13}, "2024": {"ev": 33905, "fast_chg": 3641, "slow_chg": 13616, "total_chg": 17257, "ev_per_fast": 9.31, "ev_per_slow": 2.49, "ev_per_total": 1.96}, "2025": {"ev": 45090, "fast_chg": 3946, "slow_chg": 16483, "total_chg": 20429, "ev_per_fast": 11.43, "ev_per_slow": 2.74, "ev_per_total": 2.21}, "26Q1": {"ev": 50683, "fast_chg": 3969, "slow_chg": 17697, "total_chg": 21666, "ev_per_fast": 12.77, "ev_per_slow": 2.86, "ev_per_total": 2.34}}, "경남": {"2023": {"ev": 36225, "fast_chg": 2404, "slow_chg": 13284, "total_chg": 15688, "ev_per_fast": 15.07, "ev_per_slow": 2.73, "ev_per_total": 2.31}, "2024": {"ev": 46628, "fast_chg": 3335, "slow_chg": 18592, "total_chg": 21927, "ev_per_fast": 13.98, "ev_per_slow": 2.51, "ev_per_total": 2.13}, "2025": {"ev": 65934, "fast_chg": 3646, "slow_chg": 24140, "total_chg": 27786, "ev_per_fast": 18.08, "ev_per_slow": 2.73, "ev_per_total": 2.37}, "26Q1": {"ev": 74025, "fast_chg": 3680, "slow_chg": 26131, "total_chg": 29811, "ev_per_fast": 20.12, "ev_per_slow": 2.83, "ev_per_total": 2.48}}, "제주": {"2023": {"ev": 39418, "fast_chg": 1728, "slow_chg": 4307, "total_chg": 6035, "ev_per_fast": 22.81, "ev_per_slow": 9.15, "ev_per_total": 6.53}, "2024": {"ev": 49007, "fast_chg": 2008, "slow_chg": 5484, "total_chg": 7492, "ev_per_fast": 24.41, "ev_per_slow": 8.94, "ev_per_total": 6.54}, "2025": {"ev": 61063, "fast_chg": 2184, "slow_chg": 6015, "total_chg": 8199, "ev_per_fast": 27.96, "ev_per_slow": 10.15, "ev_per_total": 7.45}, "26Q1": {"ev": 64864, "fast_chg": 2191, "slow_chg": 6235, "total_chg": 8426, "ev_per_fast": 29.6, "ev_per_slow": 10.4, "ev_per_total": 7.7}}}, "ev_nat": {"2023": 543900, "2024": 684244, "2025": 899101, "26Q1": 981321}, "nw_nat": {"2023": {"급속": 34311, "완속": 241561, "합계": 275872}, "2024": {"급속": 44833, "완속": 338917, "합계": 383750}, "2025": {"급속": 49734, "완속": 422137, "합계": 471871}, "26Q1": {"급속": 50520, "완속": 453614, "합계": 504134}}, "nat_capa": {"2023": {"fast_cnt": 34311, "slow_cnt": 241561, "fast_mw": 2573.3, "slow_mw": 1690.9, "total_mw": 4264.3, "fast_share_cnt": 12.4, "fast_share_mw": 60.3}, "2024": {"fast_cnt": 44833, "slow_cnt": 338917, "fast_mw": 3362.5, "slow_mw": 2372.4, "total_mw": 5734.9, "fast_share_cnt": 11.7, "fast_share_mw": 58.6}, "2025": {"fast_cnt": 49734, "slow_cnt": 422137, "fast_mw": 3730.1, "slow_mw": 2955.0, "total_mw": 6685.0, "fast_share_cnt": 10.5, "fast_share_mw": 55.8}, "26Q1": {"fast_cnt": 50520, "slow_cnt": 453614, "fast_mw": 3789.0, "slow_mw": 3175.3, "total_mw": 6964.3, "fast_share_cnt": 10.0, "fast_share_mw": 54.4}}};
+const KEPCO = {"sido_order": ["서울", "부산", "대구", "인천", "광주", "대전", "울산", "세종", "경기", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주"], "years": [2019, 2020, 2021, 2022, 2023, 2024, 2025], "biz_volume_gwh": {"서울": {"2019": 10.691, "2020": 21.132, "2021": 47.704, "2022": 102.115, "2023": 168.556, "2024": 227.268, "2025": 288.756}, "부산": {"2019": 3.662, "2020": 7.917, "2021": 17.802, "2022": 41.227, "2023": 77.013, "2024": 116.211, "2025": 169.809}, "대구": {"2019": 17.686, "2020": 21.217, "2021": 28.287, "2022": 49.775, "2023": 74.732, "2024": 95.838, "2025": 119.699}, "인천": {"2019": 5.187, "2020": 9.135, "2021": 19.279, "2022": 91.114, "2023": 104.741, "2024": 107.982, "2025": 149.357}, "광주": {"2019": 2.882, "2020": 5.879, "2021": 11.439, "2022": 23.221, "2023": 37.046, "2024": 51.39, "2025": 69.148}, "대전": {"2019": 4.0, "2020": 6.919, "2021": 12.734, "2022": 27.268, "2023": 44.541, "2024": 58.298, "2025": 74.011}, "울산": {"2019": 1.661, "2020": 2.693, "2021": 4.24, "2022": 10.722, "2023": 20.148, "2024": 30.473, "2025": 45.719}, "세종": {"2019": 1.898, "2020": 4.1, "2021": 7.14, "2022": 11.691, "2023": 19.998, "2024": 27.497, "2025": 37.546}, "경기": {"2019": 28.315, "2020": 58.279, "2021": 122.594, "2022": 270.376, "2023": 462.72, "2024": 706.845, "2025": 1003.508}, "강원": {"2019": 4.003, "2020": 7.319, "2021": 14.924, "2022": 33.739, "2023": 55.045, "2024": 82.091, "2025": 110.543}, "충북": {"2019": 4.612, "2020": 7.841, "2021": 14.43, "2022": 32.431, "2023": 52.794, "2024": 73.824, "2025": 106.371}, "충남": {"2019": 5.979, "2020": 10.278, "2021": 18.651, "2022": 36.916, "2023": 59.051, "2024": 84.672, "2025": 117.215}, "전북": {"2019": 3.435, "2020": 6.217, "2021": 11.647, "2022": 27.913, "2023": 50.269, "2024": 73.107, "2025": 102.097}, "전남": {"2019": 5.174, "2020": 7.836, "2021": 12.144, "2022": 24.143, "2023": 38.682, "2024": 55.378, "2025": 78.47}, "경북": {"2019": 9.058, "2020": 14.852, "2021": 26.658, "2022": 47.396, "2023": 72.809, "2024": 100.923, "2025": 142.192}, "경남": {"2019": 10.215, "2020": 22.484, "2021": 40.459, "2022": 68.23, "2023": 102.894, "2024": 139.81, "2025": 187.245}, "제주": {"2019": 18.348, "2020": 22.254, "2021": 33.859, "2022": 42.22, "2023": 49.698, "2024": 57.581, "2025": 69.924}}, "biz_revenue_eokwon": {"서울": {"2019": 4.439, "2020": 17.411, "2021": 55.711, "2022": 137.993, "2023": 282.263, "2024": 390.609, "2025": 488.192}, "부산": {"2019": 1.463, "2020": 6.257, "2021": 19.613, "2022": 52.104, "2023": 121.625, "2024": 189.663, "2025": 267.157}, "대구": {"2019": 7.596, "2020": 14.688, "2021": 31.688, "2022": 65.733, "2023": 124.725, "2024": 166.701, "2025": 203.511}, "인천": {"2019": 2.038, "2020": 6.798, "2021": 20.857, "2022": 114.712, "2023": 164.276, "2024": 179.44, "2025": 241.676}, "광주": {"2019": 1.206, "2020": 4.767, "2021": 13.876, "2022": 32.277, "2023": 63.695, "2024": 91.085, "2025": 119.565}, "대전": {"2019": 1.585, "2020": 5.121, "2021": 14.25, "2022": 36.855, "2023": 74.163, "2024": 101.552, "2025": 125.725}, "울산": {"2019": 0.709, "2020": 2.688, "2021": 7.403, "2022": 17.344, "2023": 38.823, "2024": 57.387, "2025": 82.587}, "세종": {"2019": 0.779, "2020": 2.67, "2021": 6.992, "2022": 14.411, "2023": 31.502, "2024": 44.242, "2025": 57.934}, "경기": {"2019": 11.403, "2020": 42.014, "2021": 128.7, "2022": 332.347, "2023": 706.844, "2024": 1114.881, "2025": 1549.652}, "강원": {"2019": 1.772, "2020": 6.977, "2021": 22.731, "2022": 54.767, "2023": 106.878, "2024": 163.226, "2025": 209.261}, "충북": {"2019": 1.982, "2020": 6.703, "2021": 19.565, "2022": 48.534, "2023": 96.332, "2024": 142.666, "2025": 193.554}, "충남": {"2019": 2.549, "2020": 8.772, "2021": 26.329, "2022": 60.122, "2023": 114.929, "2024": 167.136, "2025": 223.197}, "전북": {"2019": 1.509, "2020": 5.87, "2021": 19.43, "2022": 48.005, "2023": 99.026, "2024": 148.924, "2025": 199.736}, "전남": {"2019": 2.249, "2020": 7.36, "2021": 21.502, "2022": 47.321, "2023": 85.093, "2024": 125.184, "2025": 166.229}, "경북": {"2019": 3.905, "2020": 13.048, "2021": 37.099, "2022": 80.968, "2023": 146.797, "2024": 209.863, "2025": 277.696}, "경남": {"2019": 4.202, "2020": 15.984, "2021": 44.995, "2022": 97.513, "2023": 179.955, "2024": 254.267, "2025": 333.444}, "제주": {"2019": 8.975, "2020": 16.968, "2021": 40.728, "2022": 65.544, "2023": 97.931, "2024": 115.0, "2025": 133.45}}, "biz_volume_yoy": {"서울": {"2020": 97.67, "2021": 125.74, "2022": 114.06, "2023": 65.07, "2024": 34.83, "2025": 27.06}, "부산": {"2020": 116.2, "2021": 124.86, "2022": 131.59, "2023": 86.8, "2024": 50.9, "2025": 46.12}, "대구": {"2020": 19.97, "2021": 33.32, "2022": 75.97, "2023": 50.14, "2024": 28.24, "2025": 24.9}, "인천": {"2020": 76.09, "2021": 111.05, "2022": 372.62, "2023": 14.95, "2024": 3.09, "2025": 38.32}, "광주": {"2020": 103.99, "2021": 94.57, "2022": 103.0, "2023": 59.54, "2024": 38.72, "2025": 34.56}, "대전": {"2020": 72.99, "2021": 84.03, "2022": 114.14, "2023": 63.35, "2024": 30.89, "2025": 26.95}, "울산": {"2020": 62.09, "2021": 57.46, "2022": 152.85, "2023": 87.91, "2024": 51.25, "2025": 50.03}, "세종": {"2020": 116.06, "2021": 74.14, "2022": 63.74, "2023": 71.06, "2024": 37.5, "2025": 36.55}, "경기": {"2020": 105.82, "2021": 110.36, "2022": 120.55, "2023": 71.14, "2024": 52.76, "2025": 41.97}, "강원": {"2020": 82.84, "2021": 103.92, "2022": 126.08, "2023": 63.15, "2024": 49.13, "2025": 34.66}, "충북": {"2020": 70.03, "2021": 84.04, "2022": 124.74, "2023": 62.79, "2024": 39.83, "2025": 44.09}, "충남": {"2020": 71.9, "2021": 81.46, "2022": 97.93, "2023": 59.96, "2024": 43.39, "2025": 38.43}, "전북": {"2020": 81.01, "2021": 87.34, "2022": 139.67, "2023": 80.09, "2024": 45.43, "2025": 39.65}, "전남": {"2020": 51.47, "2021": 54.97, "2022": 98.81, "2023": 60.22, "2024": 43.16, "2025": 41.7}, "경북": {"2020": 63.97, "2021": 79.49, "2022": 77.79, "2023": 53.62, "2024": 38.61, "2025": 40.89}, "경남": {"2020": 120.1, "2021": 79.95, "2022": 68.64, "2023": 50.8, "2024": 35.88, "2025": 33.93}, "제주": {"2020": 21.29, "2021": 52.15, "2022": 24.69, "2023": 17.71, "2024": 15.86, "2025": 21.44}}, "cagr_19_25": {"서울": 73.22, "부산": 89.54, "대구": 37.53, "인천": 75.07, "광주": 69.83, "대전": 62.63, "울산": 73.76, "세종": 64.46, "경기": 81.24, "강원": 73.86, "충북": 68.72, "충남": 64.21, "전북": 76.0, "전남": 57.33, "경북": 58.24, "경남": 62.38, "제주": 24.98}, "cagr_22_25": {"서울": 41.41, "부산": 60.3, "대구": 33.98, "인천": 17.91, "광주": 43.87, "대전": 39.49, "울산": 62.16, "세종": 47.54, "경기": 54.83, "강원": 48.52, "충북": 48.58, "충남": 46.98, "전북": 54.08, "전남": 48.13, "경북": 44.23, "경남": 40.01, "제주": 18.31}, "nat_biz_volume_gwh": {"2019": 136.805, "2020": 236.352, "2021": 443.989, "2022": 940.497, "2023": 1490.735, "2024": 2089.186, "2025": 2871.609}, "nat_biz_revenue_eokwon": {"2019": 58.361, "2020": 184.096, "2021": 531.469, "2022": 1306.549, "2023": 2534.857, "2024": 3661.825, "2025": 4872.566}, "nat_yoy": {"2020": 72.77, "2021": 87.85, "2022": 111.83, "2023": 58.51, "2024": 40.14, "2025": 37.45}, "share_25": {"서울": 10.06, "부산": 5.91, "대구": 4.17, "인천": 5.2, "광주": 2.41, "대전": 2.58, "울산": 1.59, "세종": 1.31, "경기": 34.95, "강원": 3.85, "충북": 3.7, "충남": 4.08, "전북": 3.56, "전남": 2.73, "경북": 4.95, "경남": 6.52, "제주": 2.44}};
+const CAPA = {"periods": ["2023", "2024", "2025", "26Q1"], "labels": {"2023": "2023", "2024": "2024", "2025": "2025", "26Q1": "2026.1Q"}, "nat": {"2023": {"fast_cnt": 34311, "slow_cnt": 241561, "fast_mw": 2573.3, "slow_mw": 1690.9, "total_mw": 4264.3, "fast_share_cnt": 12.4, "fast_share_mw": 60.3}, "2024": {"fast_cnt": 44833, "slow_cnt": 338917, "fast_mw": 3362.5, "slow_mw": 2372.4, "total_mw": 5734.9, "fast_share_cnt": 11.7, "fast_share_mw": 58.6}, "2025": {"fast_cnt": 49734, "slow_cnt": 422137, "fast_mw": 3730.1, "slow_mw": 2955.0, "total_mw": 6685.0, "fast_share_cnt": 10.5, "fast_share_mw": 55.8}, "26Q1": {"fast_cnt": 50520, "slow_cnt": 453614, "fast_mw": 3789.0, "slow_mw": 3175.3, "total_mw": 6964.3, "fast_share_cnt": 10.0, "fast_share_mw": 54.4}}, "skel": {"fast_mw": 369.7, "slow_mw": 32.9, "total_mw": 402.6, "fast_cnt": 5098, "slow_cnt": 4689}};
+const SIDO = DATA.sido_order;
+const PERIODS = ['2023', '2024', '2025', '26Q1'];
+const P_LABELS = {'2023':'2023', '2024':'2024', '2025':'2025', '26Q1':'2026.1Q'};
+
+const colors = {
+  p0: 'rgba(59,130,246,0.85)',
+  p1: 'rgba(249,115,22,0.85)',
+  p2: 'rgba(220,38,38,0.9)',
+  p3: 'rgba(124,58,237,0.9)',
+  fast: 'rgba(220,38,38,0.85)',
+  slow: 'rgba(37,99,235,0.85)',
+};
+const P_COLORS = [colors.p0, colors.p1, colors.p2, colors.p3];
+
+// ① EV bar
+const evData = PERIODS.map(p => SIDO.map(s => DATA.ev_by_sido[s][p]));
+new Chart(document.getElementById('chartEV'), {
+  type: 'bar',
+  data: { labels: SIDO, datasets: PERIODS.map((p,i)=>({ label: P_LABELS[p], data: evData[i], backgroundColor: P_COLORS[i] })) },
+  options: { responsive: true,
+    plugins: { title: { display: true, text: '시도별 EV 등록 대수 (2023–2026.1Q)' } },
+    scales: { y: { beginAtZero: true, title: { display: true, text: '대수' } } }
+  }
+});
+
+// ② Charger fast/slow
+const chgFast = PERIODS.map(p => SIDO.map(s => DATA.charger_by_sido[s][p]['급속']));
+new Chart(document.getElementById('chartChargerFast'), {
+  type: 'bar',
+  data: { labels: SIDO, datasets: PERIODS.map((p,i)=>({ label: P_LABELS[p], data: chgFast[i], backgroundColor: P_COLORS[i] })) },
+  options: { plugins: { title: { display: true, text: '급속 충전기 (≥30kW, 누적)' } },
+    scales: { y: { beginAtZero: true, title: { display: true, text: '대수' } } } }
+});
+const chgSlow = PERIODS.map(p => SIDO.map(s => DATA.charger_by_sido[s][p]['완속']));
+new Chart(document.getElementById('chartChargerSlow'), {
+  type: 'bar',
+  data: { labels: SIDO, datasets: PERIODS.map((p,i)=>({ label: P_LABELS[p], data: chgSlow[i], backgroundColor: P_COLORS[i] })) },
+  options: { plugins: { title: { display: true, text: '완속 충전기 (<30kW, 누적)' } },
+    scales: { y: { beginAtZero: true, title: { display: true, text: '대수' } } } }
+});
+
+// ② B Capa per period
+const periodLabels = PERIODS.map(p => P_LABELS[p]);
+new Chart(document.getElementById('chartCapaPeriod'), {
+  type: 'bar',
+  data: { labels: periodLabels,
+    datasets: [
+      { label:'급속 Capa (MW)', data: PERIODS.map(p => CAPA.nat[p].fast_mw), backgroundColor: 'rgba(220,38,38,0.85)' },
+      { label:'완속 Capa (MW)', data: PERIODS.map(p => CAPA.nat[p].slow_mw), backgroundColor: 'rgba(37,99,235,0.85)' },
+    ]},
+  options: { plugins: { title: { display: true, text: '전국 NW Capa (MW) · 시점별 (75/7 가정)' } },
+    scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, title: { display: true, text: 'MW' } } } }
+});
+new Chart(document.getElementById('chartCapaShare'), {
+  type: 'line',
+  data: { labels: periodLabels,
+    datasets: [
+      { label:'급속 비중 (개수)', data: PERIODS.map(p => CAPA.nat[p].fast_share_cnt), borderColor: '#94a3b8', backgroundColor: '#94a3b8', tension: 0.2 },
+      { label:'급속 비중 (Capa)', data: PERIODS.map(p => CAPA.nat[p].fast_share_mw), borderColor: '#dc2626', backgroundColor: '#dc2626', tension: 0.2, borderWidth: 3, pointRadius: 5 },
+    ]},
+  options: { plugins: { title: { display: true, text: '급속 비중: 개수 vs Capa (%)' } },
+    scales: { y: { beginAtZero: true, title: { display: true, text: '(%)' }, ticks: { callback: v => v + '%' } } } }
+});
+
+// ③ Ratio
+const ratioFast = PERIODS.map(p => SIDO.map(s => DATA.ratio[s][p].ev_per_fast));
+new Chart(document.getElementById('chartRatioFast'), {
+  type: 'bar',
+  data: { labels: SIDO, datasets: PERIODS.map((p,i)=>({ label: P_LABELS[p], data: ratioFast[i], backgroundColor: P_COLORS[i] })) },
+  options: { plugins: { title: { display: true, text: '급속 차충비 (EV ÷ 급속, 대/기)' } },
+    scales: { y: { beginAtZero: true, title: { display: true, text: '대/기' } } } }
+});
+const ratioSlow = PERIODS.map(p => SIDO.map(s => DATA.ratio[s][p].ev_per_slow));
+new Chart(document.getElementById('chartRatioSlow'), {
+  type: 'bar',
+  data: { labels: SIDO, datasets: PERIODS.map((p,i)=>({ label: P_LABELS[p], data: ratioSlow[i], backgroundColor: P_COLORS[i] })) },
+  options: { plugins: { title: { display: true, text: '완속 차충비 (EV ÷ 완속, 대/기)' } },
+    scales: { y: { beginAtZero: true, title: { display: true, text: '대/기' } } } }
+});
+
+// ④ SKEL util
+const skelFast25 = SIDO.map(s => DATA.ev_by_sido[s]['2025']); // dummy, will replace
+// Use prior skel_util structure via embedded const
+const SKEL = {"서울": {"급속": {"cnt": 531, "util25": 5.94, "util24": 6.26}, "완속": {"cnt": 522, "util25": 8.11, "util24": 7.07}}, "부산": {"급속": {"cnt": 308, "util25": 5.0, "util24": 4.68}, "완속": {"cnt": 484, "util25": 7.17, "util24": 6.07}}, "대구": {"급속": {"cnt": 108, "util25": 3.33, "util24": 3.11}, "완속": {"cnt": 341, "util25": 8.48, "util24": 7.81}}, "인천": {"급속": {"cnt": 302, "util25": 4.41, "util24": 5.05}, "완속": {"cnt": 107, "util25": 6.96, "util24": 5.67}}, "광주": {"급속": {"cnt": 225, "util25": 3.0, "util24": 3.14}, "완속": {"cnt": 162, "util25": 6.96, "util24": 6.55}}, "대전": {"급속": {"cnt": 116, "util25": 3.35, "util24": 3.05}, "완속": {"cnt": 137, "util25": 8.03, "util24": 6.76}}, "울산": {"급속": {"cnt": 111, "util25": 4.42, "util24": 5.51}, "완속": {"cnt": 127, "util25": 5.99, "util24": 4.14}}, "세종": {"급속": {"cnt": 18, "util25": 2.36, "util24": 2.83}, "완속": {"cnt": 15, "util25": 9.34, "util24": 9.12}}, "경기": {"급속": {"cnt": 1555, "util25": 4.43, "util24": 5.19}, "완속": {"cnt": 1033, "util25": 7.69, "util24": 6.2}}, "강원": {"급속": {"cnt": 310, "util25": 3.24, "util24": 3.74}, "완속": {"cnt": 233, "util25": 5.68, "util24": 4.76}}, "충북": {"급속": {"cnt": 169, "util25": 3.81, "util24": 3.69}, "완속": {"cnt": 145, "util25": 7.95, "util24": 7.65}}, "충남": {"급속": {"cnt": 250, "util25": 3.28, "util24": 3.16}, "완속": {"cnt": 266, "util25": 8.39, "util24": 6.02}}, "전북": {"급속": {"cnt": 181, "util25": 3.2, "util24": 3.35}, "완속": {"cnt": 135, "util25": 5.52, "util24": 4.93}}, "전남": {"급속": {"cnt": 126, "util25": 2.06, "util24": 2.12}, "완속": {"cnt": 104, "util25": 6.87, "util24": 6.07}}, "경북": {"급속": {"cnt": 336, "util25": 3.25, "util24": 3.02}, "완속": {"cnt": 346, "util25": 6.9, "util24": 5.57}}, "경남": {"급속": {"cnt": 267, "util25": 3.75, "util24": 3.7}, "완속": {"cnt": 373, "util25": 6.33, "util24": 5.48}}, "제주": {"급속": {"cnt": 184, "util25": 3.16, "util24": 2.89}, "완속": {"cnt": 157, "util25": 6.5, "util24": 5.16}}};
+const _f25 = SIDO.map(s => SKEL[s]['급속'].util25);
+const _s25 = SIDO.map(s => SKEL[s]['완속'].util25);
+const _f24 = SIDO.map(s => SKEL[s]['급속'].util24);
+const _s24 = SIDO.map(s => SKEL[s]['완속'].util24);
+new Chart(document.getElementById('chartSKELUtil'), {
+  type: 'bar',
+  data: { labels: SIDO, datasets: [
+    { label:'급속 25년', data: _f25, backgroundColor: colors.fast },
+    { label:'완속 25년', data: _s25, backgroundColor: colors.slow },
+    { label:'급속 24년', data: _f24, backgroundColor: 'rgba(220,38,38,0.35)' },
+    { label:'완속 24년', data: _s24, backgroundColor: 'rgba(37,99,235,0.35)' },
+  ]},
+  options: { plugins: { title: { display: true, text: 'SKEL 가동률 (%)' } },
+    scales: { y: { beginAtZero: true, ticks: { callback: v => v + '%' } } } }
+});
+const _fc = SIDO.map(s => SKEL[s]['급속'].cnt);
+const _sc = SIDO.map(s => SKEL[s]['완속'].cnt);
+new Chart(document.getElementById('chartSKELCount'), {
+  type: 'bar',
+  data: { labels: SIDO, datasets: [
+    { label:'SKEL 급속', data: _fc, backgroundColor: colors.fast },
+    { label:'SKEL 완속', data: _sc, backgroundColor: colors.slow },
+  ]},
+  options: { plugins: { title: { display: true, text: 'SKEL 충전기 대수 (급속·완속)' } },
+    scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } } }
+});
+
+// ⑤ KEPCO
+const K_SIDO = KEPCO.sido_order;
+const K_YEARS = KEPCO.years;
+const palette = ['#2563eb','#dc2626','#f59e0b','#10b981','#8b5cf6','#ec4899','#0ea5e9','#f97316','#14b8a6','#a855f7','#ef4444','#22c55e','#eab308','#06b6d4','#6366f1','#84cc16','#fb7185'];
+
+new Chart(document.getElementById('chartBizVol'), {
+  type: 'bar',
+  data: { labels: K_YEARS, datasets: K_SIDO.map((s,i)=>({ label:s, data: K_YEARS.map(y => KEPCO.biz_volume_gwh[s][y]), backgroundColor: palette[i % palette.length] })) },
+  options: { plugins: { title: { display: true, text: '시도별 사업자용 전력 판매량 (GWh · stacked)' }, legend: { position: 'right' } },
+    scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, title: { display: true, text: 'GWh' } } } }
+});
+
+const cagrArr = K_SIDO.map(s => ({s, v: KEPCO.cagr_22_25[s]})).sort((a,b)=>b.v-a.v);
+new Chart(document.getElementById('chartBizCAGR'), {
+  type: 'bar',
+  data: { labels: cagrArr.map(o=>o.s), datasets: [{ label:"CAGR '22→'25 (%)", data: cagrArr.map(o=>o.v), backgroundColor: cagrArr.map((o,i) => i < 5 ? '#dc2626' : (i >= cagrArr.length - 3 ? '#64748b' : '#f59e0b')) }] },
+  options: { plugins: { title: { display: true, text: "CAGR '22→'25 (%) · Top 5 Red · Bot 3 Grey" }, legend: { display: false } },
+    scales: { y: { beginAtZero: true, ticks: { callback: v => v + '%' } } } }
+});
+
+
+// =========================================================
+// ◉ 인터랙티브 시도별 트렌드 (막대 + 꺾은선 combo)
+// =========================================================
+const TREND_LABELS = PERIODS.map(p => P_LABELS[p]);
+
+// 전국 합계 계산
+function aggregateNation() {
+  const ev = PERIODS.map(p => SIDO.reduce((s, r) => s + (DATA.ev_by_sido[r][p] || 0), 0));
+  const fast = PERIODS.map(p => SIDO.reduce((s, r) => s + (DATA.charger_by_sido[r][p]['급속'] || 0), 0));
+  const slow = PERIODS.map(p => SIDO.reduce((s, r) => s + (DATA.charger_by_sido[r][p]['완속'] || 0), 0));
+  const fast_ratio = ev.map((e, i) => fast[i] ? +(e/fast[i]).toFixed(2) : null);
+  const slow_ratio = ev.map((e, i) => slow[i] ? +(e/slow[i]).toFixed(2) : null);
+  return { ev, fast, slow, fast_ratio, slow_ratio };
+}
+function regionData(sido) {
+  const ev = PERIODS.map(p => DATA.ev_by_sido[sido][p]);
+  const fast = PERIODS.map(p => DATA.charger_by_sido[sido][p]['급속']);
+  const slow = PERIODS.map(p => DATA.charger_by_sido[sido][p]['완속']);
+  const fast_ratio = PERIODS.map(p => DATA.ratio[sido][p].ev_per_fast);
+  const slow_ratio = PERIODS.map(p => DATA.ratio[sido][p].ev_per_slow);
+  return { ev, fast, slow, fast_ratio, slow_ratio };
+}
+
+let trendCurrent = aggregateNation();
+const trendCtx = document.getElementById('chartTrend');
+const trendChart = new Chart(trendCtx, {
+  data: {
+    labels: TREND_LABELS,
+    datasets: [
+      { type: 'bar', label: 'EV 보급 (대)', data: trendCurrent.ev,
+        backgroundColor: 'rgba(37,99,235,0.85)', yAxisID: 'yEV', order: 3 },
+      { type: 'bar', label: '급속 NW (기)', data: trendCurrent.fast,
+        backgroundColor: 'rgba(220,38,38,0.85)', yAxisID: 'yNW', order: 3 },
+      { type: 'bar', label: '완속 NW (기)', data: trendCurrent.slow,
+        backgroundColor: 'rgba(148,163,184,0.85)', yAxisID: 'yNW', order: 3 },
+      { type: 'line', label: '급속 차충비 (대/기)', data: trendCurrent.fast_ratio,
+        borderColor: '#b91c1c', backgroundColor: '#b91c1c',
+        yAxisID: 'yR', tension: 0.25, borderWidth: 3, pointRadius: 6, pointHoverRadius: 8, order: 1 },
+      { type: 'line', label: '완속 차충비 (대/기)', data: trendCurrent.slow_ratio,
+        borderColor: '#0891b2', backgroundColor: '#0891b2',
+        yAxisID: 'yR', tension: 0.25, borderWidth: 3, pointRadius: 6, pointHoverRadius: 8, borderDash: [6,3], order: 1 },
+    ]
+  },
+  options: {
+    responsive: true,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { position: 'top' },
+      tooltip: { callbacks: {
+        label: function(ctx) {
+          const v = ctx.parsed.y;
+          if (ctx.dataset.yAxisID === 'yR') return ctx.dataset.label + ': ' + v.toFixed(2) + ' 대/기';
+          return ctx.dataset.label + ': ' + (v || 0).toLocaleString() + (ctx.dataset.yAxisID === 'yEV' ? ' 대' : ' 기');
+        }
+      }}
+    },
+    scales: {
+      yEV: { position: 'left', beginAtZero: true, title: { display: true, text: 'EV 대수' },
+             grid: { drawOnChartArea: true } },
+      yNW: { position: 'left', beginAtZero: true, title: { display: false },
+             display: false, grid: { drawOnChartArea: false } },
+      yR:  { position: 'right', beginAtZero: true, title: { display: true, text: '차충비 (대/기)' },
+             grid: { drawOnChartArea: false }, ticks: { callback: v => v.toFixed(1) } }
+    }
+  }
+});
+
+function updateTrend(sido) {
+  const data = (sido === '전국') ? aggregateNation() : regionData(sido);
+  trendChart.data.datasets[0].data = data.ev;
+  trendChart.data.datasets[1].data = data.fast;
+  trendChart.data.datasets[2].data = data.slow;
+  trendChart.data.datasets[3].data = data.fast_ratio;
+  trendChart.data.datasets[4].data = data.slow_ratio;
+  trendChart.update('none');
+  document.getElementById('trendRegionLabel').textContent = sido;
+}
+
+document.querySelectorAll('.region-chips .chip').forEach(btn => {
+  btn.addEventListener('mouseenter', () => { updateTrend(btn.dataset.sido); });
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.region-chips .chip').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    updateTrend(btn.dataset.sido);
+  });
+});
+
+// =========================================================
+// ⑦ 아파트 상면 Penetration chart (simple, 3 periods)
+// =========================================================
+const APT = {"years": [2023, 2024, 2025], "nat_parking": {"2023": 12013658, "2024": 12374068, "2025": 12745290}, "nat_units": {"2023": 11465512, "2024": 11809478, "2025": 12163762}, "nw_apt_nat": {"2023": {"급속": 1734, "완속": 181302, "합계": 183036}, "2024": {"급속": 2333, "완속": 249281, "합계": 251614}, "2025": {"급속": 2607, "완속": 318930, "합계": 321537}}, "nw_apt_by_sido": {"서울": {"2023": {"급속": 340, "완속": 31471, "합계": 31811}, "2024": {"급속": 421, "완속": 40047, "합계": 40468}, "2025": {"급속": 474, "완속": 48546, "합계": 49020}}, "부산": {"2023": {"급속": 88, "완속": 14731, "합계": 14819}, "2024": {"급속": 107, "완속": 18163, "합계": 18270}, "2025": {"급속": 128, "완속": 22302, "합계": 22430}}, "대구": {"2023": {"급속": 163, "완속": 10408, "합계": 10571}, "2024": {"급속": 208, "완속": 13873, "합계": 14081}, "2025": {"급속": 228, "완속": 17369, "합계": 17597}}, "인천": {"2023": {"급속": 91, "완속": 10107, "합계": 10198}, "2024": {"급속": 140, "완속": 15020, "합계": 15160}, "2025": {"급속": 154, "완속": 20431, "합계": 20585}}, "광주": {"2023": {"급속": 28, "완속": 5430, "합계": 5458}, "2024": {"급속": 51, "완속": 8328, "합계": 8379}, "2025": {"급속": 57, "완속": 10339, "합계": 10396}}, "대전": {"2023": {"급속": 75, "완속": 5835, "합계": 5910}, "2024": {"급속": 115, "완속": 7204, "합계": 7319}, "2025": {"급속": 115, "완속": 9130, "합계": 9245}}, "울산": {"2023": {"급속": 21, "완속": 3449, "합계": 3470}, "2024": {"급속": 29, "완속": 4898, "합계": 4927}, "2025": {"급속": 33, "완속": 6921, "합계": 6954}}, "세종": {"2023": {"급속": 40, "완속": 3050, "합계": 3090}, "2024": {"급속": 75, "완속": 3526, "합계": 3601}, "2025": {"급속": 87, "완속": 4368, "합계": 4455}}, "경기": {"2023": {"급속": 368, "완속": 52656, "합계": 53024}, "2024": {"급속": 463, "완속": 75717, "합계": 76180}, "2025": {"급속": 545, "완속": 98871, "합계": 99416}}, "강원": {"2023": {"급속": 60, "완속": 4330, "합계": 4390}, "2024": {"급속": 69, "완속": 6287, "합계": 6356}, "2025": {"급속": 74, "완속": 8053, "합계": 8127}}, "충북": {"2023": {"급속": 56, "완속": 5368, "합계": 5424}, "2024": {"급속": 68, "완속": 7548, "합계": 7616}, "2025": {"급속": 77, "완속": 10541, "합계": 10618}}, "충남": {"2023": {"급속": 63, "완속": 6517, "합계": 6580}, "2024": {"급속": 144, "완속": 9333, "합계": 9477}, "2025": {"급속": 154, "완속": 12435, "합계": 12589}}, "전북": {"2023": {"급속": 33, "완속": 5290, "합계": 5323}, "2024": {"급속": 47, "완속": 7824, "합계": 7871}, "2025": {"급속": 50, "완속": 9671, "합계": 9721}}, "전남": {"2023": {"급속": 45, "완속": 4407, "합계": 4452}, "2024": {"급속": 78, "완속": 6707, "합계": 6785}, "2025": {"급속": 88, "완속": 7949, "합계": 8037}}, "경북": {"2023": {"급속": 111, "완속": 6709, "합계": 6820}, "2024": {"급속": 142, "완속": 9403, "합계": 9545}, "2025": {"급속": 160, "완속": 11701, "합계": 11861}}, "경남": {"2023": {"급속": 89, "완속": 9745, "합계": 9834}, "2024": {"급속": 101, "완속": 13036, "합계": 13137}, "2025": {"급속": 105, "완속": 17707, "합계": 17812}}, "제주": {"2023": {"급속": 63, "완속": 1799, "합계": 1862}, "2024": {"급속": 75, "완속": 2367, "합계": 2442}, "2025": {"급속": 78, "완속": 2596, "합계": 2674}}}, "region_parking": {"서울": {"parking_26_4": 1794069, "parking_2025": 1776479, "units_26_4": 1745961, "complexes": 3140}, "부산": {"parking_26_4": 834157, "parking_2025": 825978, "units_26_4": 826161, "complexes": 1431}, "대구": {"parking_26_4": 750819, "parking_2025": 743458, "units_26_4": 661500, "complexes": 1162}, "인천": {"parking_26_4": 816752, "parking_2025": 808744, "units_26_4": 759134, "complexes": 1108}, "광주": {"parking_26_4": 456818, "parking_2025": 452339, "units_26_4": 453120, "complexes": 926}, "대전": {"parking_26_4": 407018, "parking_2025": 403027, "units_26_4": 386650, "complexes": 582}, "울산": {"parking_26_4": 268090, "parking_2025": 265461, "units_26_4": 264903, "complexes": 535}, "세종": {"parking_26_4": 175632, "parking_2025": 173910, "units_26_4": 136822, "complexes": 215}, "경기": {"parking_26_4": 3933371, "parking_2025": 3894806, "units_26_4": 3558805, "complexes": 5508}, "강원": {"parking_26_4": 357360, "parking_2025": 353856, "units_26_4": 372154, "complexes": 827}, "충북": {"parking_26_4": 421080, "parking_2025": 416951, "units_26_4": 410032, "complexes": 779}, "충남": {"parking_26_4": 549837, "parking_2025": 544446, "units_26_4": 549095, "complexes": 981}, "전북": {"parking_26_4": 413497, "parking_2025": 409443, "units_26_4": 425375, "complexes": 866}, "전남": {"parking_26_4": 352950, "parking_2025": 349489, "units_26_4": 382323, "complexes": 772}, "경북": {"parking_26_4": 518536, "parking_2025": 513452, "units_26_4": 519507, "complexes": 1036}, "경남": {"parking_26_4": 768346, "parking_2025": 760813, "units_26_4": 777343, "complexes": 1432}, "제주": {"parking_26_4": 53157, "parking_2025": 52636, "units_26_4": 55318, "complexes": 176}}, "kapt_meta": {"complexes": 21476, "units_264": 12284203, "parking_264": 12871489, "per_unit": 1.048}};
+const APT_YEARS = [2023, 2024, 2025];
+const aptLabels = APT_YEARS.map(y => String(y));
+const aptFast = APT_YEARS.map(y => APT.nw_apt_nat[y]['급속']);
+const aptSlow = APT_YEARS.map(y => APT.nw_apt_nat[y]['완속']);
+const aptParking = APT_YEARS.map(y => APT.nat_parking[y]);
+const aptPen = APT_YEARS.map(y => {
+  const nw = APT.nw_apt_nat[y]['합계'];
+  return +(nw/APT.nat_parking[y]*100).toFixed(2);
+});
+
+new Chart(document.getElementById('chartAptPen'), {
+  data: {
+    labels: aptLabels,
+    datasets: [
+      { type: 'bar', label: '아파트 완속 (기)', data: aptSlow,
+        backgroundColor: 'rgba(37,99,235,0.85)', yAxisID: 'yL', stack: 'chg', order: 3 },
+      { type: 'bar', label: '아파트 급속 (기)', data: aptFast,
+        backgroundColor: 'rgba(220,38,38,0.85)', yAxisID: 'yL', stack: 'chg', order: 3 },
+      { type: 'line', label: 'Penetration (%)', data: aptPen,
+        borderColor: '#16a34a', backgroundColor: '#16a34a',
+        yAxisID: 'yR', tension: 0.25, borderWidth: 3, pointRadius: 8, pointHoverRadius: 10, order: 1 },
+    ]
+  },
+  options: {
+    responsive: true,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      title: { display: true, text: '연도별 아파트 NW 충전기 (막대) + Penetration % (꺾은선)' },
+      legend: { position: 'top' },
+      tooltip: { callbacks: {
+        label: function(ctx) {
+          if (ctx.dataset.yAxisID === 'yR') return 'Penetration: ' + ctx.parsed.y.toFixed(2) + '%';
+          return ctx.dataset.label + ': ' + (ctx.parsed.y || 0).toLocaleString();
+        }
+      }}
+    },
+    scales: {
+      yL: { position: 'left', beginAtZero: true, title: { display: true, text: '충전기 (기)' }, stacked: true },
+      yR: { position: 'right', beginAtZero: true, max: 5, title: { display: true, text: 'Penetration (%)' },
+            grid: { drawOnChartArea: false }, ticks: { callback: v => v + '%' } },
+      x: { stacked: true }
+    }
+  }
+});
+
+// ⑦-B Simple: 시도별 Penetration bar chart
+const kSidoOrder = SIDO.filter(s => APT.region_parking[s]);
+const regionPen = kSidoOrder.map(s => {
+  const park = APT.region_parking[s].parking_2025 || 0;
+  const nw = (APT.nw_apt_by_sido[s] && APT.nw_apt_by_sido[s]['2025']) ? APT.nw_apt_by_sido[s]['2025']['합계'] : 0;
+  return park ? +(nw/park*100).toFixed(2) : 0;
+});
+new Chart(document.getElementById('chartKaptPenSimple'), {
+  type: 'bar',
+  data: {
+    labels: kSidoOrder,
+    datasets: [
+      { label: 'Penetration % ("25)', data: regionPen,
+        backgroundColor: regionPen.map(v => v >= 5 ? '#16a34a' : (v >= 2 ? '#f59e0b' : '#dc2626')) },
+    ]
+  },
+  options: {
+    plugins: {
+      title: { display: true, text: "시도별 아파트 Penetration ('25) · 녹색 ≥5%, 주황 2-5%, 빨강 <2%" },
+      legend: { display: false },
+      tooltip: { callbacks: { label: c => 'Penetration: ' + c.parsed.y.toFixed(2) + '%' } }
+    },
+    scales: { y: { beginAtZero: true, max: 6, ticks: { callback: v => v + '%' } } }
+  }
+});
+
+// ⑦-B Tab detail panel (simple: parking + NW only)
+function aptAgg(sido) {
+  if (sido === '전국') {
+    return {
+      cnt: APT.kapt_meta.complexes,
+      units: APT.kapt_meta.units_264,
+      parking: APT.nat_parking['2025'],
+      nw: APT.nw_apt_nat['2025']['합계'],
+      nw_fast: APT.nw_apt_nat['2025']['급속'],
+      nw_slow: APT.nw_apt_nat['2025']['완속'],
+    };
+  }
+  const r = APT.region_parking[sido] || {};
+  const nws = (APT.nw_apt_by_sido[sido] && APT.nw_apt_by_sido[sido]['2025']) ? APT.nw_apt_by_sido[sido]['2025'] : {'급속':0,'완속':0,'합계':0};
+  return {
+    cnt: r.complexes || 0,
+    units: r.units_26_4 || 0,
+    parking: r.parking_2025 || 0,
+    nw: nws['합계'],
+    nw_fast: nws['급속'],
+    nw_slow: nws['완속'],
+  };
+}
+function fmt(n) { return (n||0).toLocaleString(); }
+function pct(num, den, d=2) { return den > 0 ? ((num/den)*100).toFixed(d) + '%' : '-'; }
+
+const NAT = aptAgg('전국');
+
+const kpDetailChart = new Chart(document.getElementById('chartKaptDetail'), {
+  type: 'bar',
+  data: {
+    labels: ['주차면', 'NW 아파트 충전기', '(법정 5% 목표)'],
+    datasets: [
+      { label: '지역', data: [0,0,0], backgroundColor: ['rgba(148,163,184,0.85)','rgba(220,38,38,0.85)','rgba(22,163,74,0.45)'] },
+    ]
+  },
+  options: {
+    indexAxis: 'y',
+    plugins: {
+      title: { display: true, text: '주차면 vs NW 충전기 · 5% 목표 (로그 스케일)' },
+      legend: { display: false },
+      tooltip: { callbacks: { label: c => c.parsed.x.toLocaleString() } }
+    },
+    scales: { x: { type: 'logarithmic', title: { display: true, text: '(로그 스케일)' } } }
+  }
+});
+
+function updateKaptPanel(sido) {
+  const d = aptAgg(sido);
+  document.getElementById('kaptPanelTitle').textContent = (sido === '전국' ? '🇰🇷 전국' : sido);
+  document.getElementById('kaptPanelSub').textContent = "K-apt 주차면 × 환경부 NW 아파트 충전기 ('25말)";
+
+  document.getElementById('kp-cnt').textContent = fmt(d.cnt);
+  document.getElementById('kp-units').textContent = fmt(d.units);
+  document.getElementById('kp-parking').textContent = fmt(d.parking);
+  document.getElementById('kp-nw').textContent = fmt(d.nw);
+
+  const perUnit = d.units > 0 ? (d.parking/d.units).toFixed(2) : '-';
+  document.getElementById('kp-per-unit').textContent = '세대당 ' + perUnit + '대';
+
+  document.getElementById('kp-cnt-share').textContent = '전국 대비 ' + pct(d.cnt, NAT.cnt);
+  document.getElementById('kp-units-share').textContent = '전국 대비 ' + pct(d.units, NAT.units);
+
+  const pen = d.parking ? d.nw/d.parking*100 : 0;
+  const penNat = NAT.parking ? NAT.nw/NAT.parking*100 : 0;
+  document.getElementById('kp-pen').textContent = pen.toFixed(2) + '%';
+  document.getElementById('kp-pen-vs-nat').textContent = '전국 ' + penNat.toFixed(2) + '% · 지역 ' + pen.toFixed(2) + '%';
+
+  const gap = Math.max(0, d.parking * 0.05 - d.nw);
+  document.getElementById('kp-gap').textContent = fmt(Math.round(gap)) + ' 기';
+
+  // Benchmark table
+  const bench = [
+    ['단지 수', fmt(d.cnt), fmt(NAT.cnt)],
+    ['세대수', fmt(d.units), fmt(NAT.units)],
+    ['주차면 (25말)', fmt(d.parking), fmt(NAT.parking)],
+    ['세대당 주차', perUnit, (NAT.parking/NAT.units).toFixed(2)],
+    ['NW 아파트 (25말)', fmt(d.nw), fmt(NAT.nw)],
+    ['Penetration', pen.toFixed(2)+'%', penNat.toFixed(2)+'%'],
+  ];
+  const tbody = document.getElementById('kp-benchmark');
+  tbody.innerHTML = '';
+  bench.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td style="text-align:left">${r[0]}</td><td><b>${r[1]}</b></td><td>${r[2]}</td><td></td>`;
+    tbody.appendChild(tr);
+  });
+
+  // Update chart
+  kpDetailChart.data.datasets[0].data = [d.parking, d.nw, Math.round(d.parking * 0.05)];
+  kpDetailChart.data.datasets[0].label = sido;
+  kpDetailChart.update('none');
+}
+
+document.querySelectorAll('.kapt-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.kapt-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    updateKaptPanel(btn.dataset.sido);
+  });
+  btn.addEventListener('mouseenter', () => { updateKaptPanel(btn.dataset.sido); });
+});
+
+updateKaptPanel('전국');
+</script>
+
+</main>
+</body>
+</html>
