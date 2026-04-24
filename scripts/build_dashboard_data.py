@@ -74,6 +74,11 @@ def load_monthly_snapshots() -> list[tuple[str, dict]]:
 def merge_into_dashboard(historical: dict, snapshots: list) -> dict:
     result = json.loads(json.dumps(historical))
 
+    # Top 10 추적 사업자 (landscape 탭 추세 그래프용)
+    mapping = load_mapping()
+    slow_top10 = mapping.get("dashboard_top10", {}).get("slow", [])
+    fast_top10 = mapping.get("dashboard_top10", {}).get("fast", [])
+
     # 월별 총 포트 수 추적 (overview 재계산용)
     # historical overview_5month에서 기존 총계 추출
     month_totals = {}
@@ -115,6 +120,16 @@ def merge_into_dashboard(historical: dict, snapshots: list) -> dict:
                 for op, data in snap["fast_regional"][region]["operators"].items():
                     result["market_share"].setdefault(op, {"GSMA": [], "GSMA_plus_metro": []})
                     result["market_share"][op][region_key].append(data["ms_pct"])
+
+            # Top 10 trend — all_operators에서 조회 (없으면 None)
+            slow_all = snap["slow"].get("all_operators", {})
+            fast_all = snap["fast"].get("all_operators", {})
+            result.setdefault("slow_trend_top10", {})
+            result.setdefault("fast_trend_top10", {})
+            for op in slow_top10:
+                result["slow_trend_top10"].setdefault(op, []).append(slow_all.get(op))
+            for op in fast_top10:
+                result["fast_trend_top10"].setdefault(op, []).append(fast_all.get(op))
 
             month_totals[label] = {
                 "slow_K": round(snap["slow"]["total"] / 1000, 1),
@@ -167,7 +182,6 @@ def merge_into_dashboard(historical: dict, snapshots: list) -> dict:
             t["fast_ev"] = last_fast_ev
 
     # overview_5month 재계산 (최신 5개월)
-    mapping = load_mapping()
     slow_tracked = mapping["dashboard_tracked"]["slow"]
     fast_tracked = mapping["dashboard_tracked"]["fast"]
     result["overview_5month"] = build_overview_5month(

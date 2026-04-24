@@ -746,7 +746,11 @@ const lastPointLabel = {
 const C = {
   gs: '#8b2635', powercube: '#c97a1f', everon: '#e8c26a',
   voltup: '#3d6b3d', pluglink: '#3a8bd6', epic: '#1a2b5c',
-  chaevi: '#1a2b5c', evsis: '#e8c26a', humax: '#3d6b3d', skel: '#e4002b'
+  chaevi: '#1a2b5c', evsis: '#e8c26a', humax: '#3d6b3d', skel: '#e4002b',
+  // Top 6~10 추가 사업자 색상
+  kef: '#7b2cbf', starkof: '#00a896', easycharger: '#ff6b35',
+  hyundaieng: '#5e60ce', pumpkin: '#e85d04', kevcs: '#006494',
+  lsElink: '#ab3b5c', parkcloud: '#2a9d8f'
 };
 
 // Company name → color (handles multiple variants)
@@ -760,6 +764,10 @@ const COLOR_BY_OP = {
   '채비': C.chaevi, 'Chaevi': C.chaevi,
   '이브이시스': C.evsis, 'EVSIS': C.evsis,
   '휴맥스이브이': C.humax, 'Humax+JES': C.humax, 'Humax + JES': C.humax,
+  // Top 6~10 추가 사업자
+  '한국전자금융': C.kef, '스타코프': C.starkof, '이지차저': C.easycharger,
+  '현대엔지니어링': C.hyundaieng, '펌프킨': C.pumpkin,
+  '한국전기차충전서비스': C.kevcs, '엘에스이링크': C.lsElink, '파킹클라우드': C.parkcloud,
 };
 const colorOf = name => COLOR_BY_OP[name] || '#888';
 
@@ -832,8 +840,8 @@ function render(data) {
   if (notice) notice.style.display = hasNewData ? 'block' : 'none';
 
   if (data.overview_5month) renderOverview(data.overview_5month);
-  renderSlowTrend(months, data.slow_trend || {});
-  renderFastTrend(fastMonths, data.fast_trend || {});
+  renderSlowTrend(months, data.slow_trend || {}, data.slow_trend_top10 || null);
+  renderFastTrend(fastMonths, data.fast_trend || {}, data.fast_trend_top10 || null);
   renderConcentration(months, data.concentration || {});
   renderMarketShare(months, data.market_share || {});
   if (data.ev_market) renderEvMarket(data.ev_market);
@@ -988,12 +996,15 @@ function renderTable(bodyId, tableData, msPct, isFast) {
   tbody.innerHTML = rows + totalRow + msRow;
 }
 
-function renderSlowTrend(months, trend) {
-  const ops = Object.keys(trend).filter(k => !k.startsWith('_'));
-  const datasets = ops.map(op => ({
-    label: op, data: trend[op],
+function renderSlowTrend(months, trend, trendTop10) {
+  const ops5  = Object.keys(trend).filter(k => !k.startsWith('_'));
+  const lineTrend = trendTop10 || trend;
+  const ops10 = Object.keys(lineTrend).filter(k => !k.startsWith('_'));
+  const datasets = ops10.map(op => ({
+    label: op, data: lineTrend[op],
     borderColor: colorOf(op), backgroundColor: colorOf(op),
-    tension: 0.2, pointRadius: 2.5, borderWidth: 2, pointHoverRadius: 5
+    tension: 0.2, pointRadius: 2.5, borderWidth: 2, pointHoverRadius: 5,
+    spanGaps: true
   }));
 
   const chart = new Chart(document.getElementById('chartSlowTrend'), {
@@ -1016,16 +1027,20 @@ function renderSlowTrend(months, trend) {
     }
   });
   renderChips('slowChips', datasets, chart);
-  renderYoY('chartSlowGrowth', months, trend, ops);
-  renderDonut('chartSlowDonut', trend, ops);
+  // YoY/Donut은 Top 5 유지
+  renderYoY('chartSlowGrowth', months, trend, ops5);
+  renderDonut('chartSlowDonut', trend, ops5);
 }
 
-function renderFastTrend(months, trend) {
-  const ops = Object.keys(trend).filter(k => !k.startsWith('_'));
-  const datasets = ops.map(op => ({
-    label: op, data: trend[op],
+function renderFastTrend(months, trend, trendTop10) {
+  const ops5  = Object.keys(trend).filter(k => !k.startsWith('_'));
+  const lineTrend = trendTop10 || trend;
+  const ops10 = Object.keys(lineTrend).filter(k => !k.startsWith('_'));
+  const datasets = ops10.map(op => ({
+    label: op, data: lineTrend[op],
     borderColor: colorOf(op), backgroundColor: colorOf(op),
-    tension: 0.2, pointRadius: 2, borderWidth: 2, pointHoverRadius: 5
+    tension: 0.2, pointRadius: 2, borderWidth: 2, pointHoverRadius: 5,
+    spanGaps: true
   }));
 
   const chart = new Chart(document.getElementById('chartFastTrend'), {
@@ -1048,8 +1063,9 @@ function renderFastTrend(months, trend) {
     }
   });
   renderChips('fastChips', datasets, chart);
-  renderYoY('chartFastGrowth', months, trend, ops);
-  renderDonut('chartFastDonut', trend, ops);
+  // YoY/Donut은 Top 5 유지
+  renderYoY('chartFastGrowth', months, trend, ops5);
+  renderDonut('chartFastDonut', trend, ops5);
 }
 
 function renderYoY(canvasId, months, trend, ops) {
