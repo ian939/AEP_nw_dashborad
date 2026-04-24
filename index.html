@@ -168,12 +168,16 @@
     border-top: 1px solid var(--border);
   }
 
+  .tags { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+
   .tag {
     font-size: 10px; font-weight: 700;
     padding: 3px 8px; border-radius: 4px;
     background: var(--navy); color: white;
     letter-spacing: 0.3px;
   }
+  .tag.tag-auto { background: var(--success); }
+  .tag.tag-manual { background: var(--sk-orange); }
 
   .card-cta {
     font-size: 12px;
@@ -232,7 +236,10 @@
       <h3>AEP Dashboard</h3>
       <p class="desc">Domestic CPO Market · 충전기 / 충전소 / 차충비 / EV Market 현황</p>
       <div class="card-meta">
-        <span class="tag">CPO MARKET</span>
+        <div class="tags">
+          <span class="tag">CPO MARKET</span>
+          <span class="tag tag-auto">자동 (매월)</span>
+        </div>
         <span class="card-cta">대시보드 열기 →</span>
       </div>
     </a>
@@ -242,7 +249,10 @@
       <h3>Regional CPO Dashboard</h3>
       <p class="desc">지역별 EV · NW · 차충비 · KEPCO 사업자용 판매 · 아파트 Penetration (2023 – 2026.1Q)</p>
       <div class="card-meta">
-        <span class="tag">MACRO MARKET</span>
+        <div class="tags">
+          <span class="tag">MACRO MARKET</span>
+          <span class="tag tag-manual">수동 (분기별)</span>
+        </div>
         <span class="card-cta">대시보드 열기 →</span>
       </div>
     </a>
