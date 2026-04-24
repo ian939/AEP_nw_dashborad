@@ -10,7 +10,8 @@
 
 ```
 .
-├── index.html                         ← GitHub Pages가 서빙하는 대시보드
+├── index.html                         ← 허브(홈) 페이지 — 대시보드 목록
+├── AEP Dashboard.html                 ← Domestic CPO Market 대시보드
 ├── data/
 │   ├── historical.json                ← PPT 원본 (Jan '23 ~ Feb '26) — 재계산 안함
 │   ├── operator_mapping.json          ← busiNm → 법인 매핑 (편집 가능)
@@ -159,7 +160,7 @@ python scripts/transform.py --input data/raw/과거파일.xlsx --year-month 2026
 - 출력: `data/dashboard-data.json`
 
 ### Stage 4: 브라우저 렌더링
-- `index.html`이 `./data/dashboard-data.json` fetch
+- `AEP Dashboard.html`이 `./data/dashboard-data.json` fetch (루트 `index.html`은 허브 페이지로 링크만 제공)
 - Chart.js로 렌더링
 - fetch 실패 시 `historical.json`으로 fallback
 

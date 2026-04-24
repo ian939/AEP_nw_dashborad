@@ -3,9 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>SK electlink | Domestic CPO Market Dashboard</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<title>SK electlink | Dashboards</title>
 <style>
   :root {
     --navy: #1a2b5c;
@@ -19,17 +17,17 @@
     --text: #1a1f36;
     --text-muted: #6b7280;
     --text-light: #9ca3af;
-    --success: #059669;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  
+
   body {
     font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     background: var(--bg);
     color: var(--text);
     font-size: 13px;
     line-height: 1.5;
+    min-height: 100vh;
   }
 
   .header {
@@ -75,7 +73,7 @@
   }
 
   .page-title {
-    padding: 24px 32px 12px;
+    padding: 32px 32px 12px;
     max-width: 1600px;
     margin: 0 auto;
     width: 100%;
@@ -87,1473 +85,172 @@
     margin-bottom: 6px;
   }
 
-  .page-title h2 { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
-  .page-title p { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
-
-  .tabs {
-    padding: 0 32px;
-    max-width: 1600px;
-    margin: 0 auto;
-    width: 100%;
-    display: flex; gap: 4px;
-    border-bottom: 1px solid var(--border);
-    overflow-x: auto;
-  }
-
-  .tab {
-    padding: 12px 18px;
-    font-size: 13px; font-weight: 600;
-    color: var(--text-muted);
-    background: transparent; border: none;
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-    transition: all 0.2s;
-    white-space: nowrap;
-    margin-bottom: -1px;
-  }
-
-  .tab:hover { color: var(--text); }
-  .tab.active { color: var(--navy); border-bottom-color: var(--sk-red); }
+  .page-title h2 { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
+  .page-title p { font-size: 13px; color: var(--text-muted); margin-top: 6px; }
 
   main {
-    padding: 20px 32px 40px;
+    padding: 20px 32px 60px;
     max-width: 1600px;
     margin: 0 auto;
     width: 100%;
   }
 
-  .tab-panel { display: none; }
-  .tab-panel.active { display: block; animation: fadeIn 0.3s ease; }
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(4px); }
-    to { opacity: 1; transform: translateY(0); }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 18px;
   }
 
-  .card {
+  .dashboard-card {
     background: var(--card);
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: 12px;
+    padding: 22px 22px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    position: relative;
     overflow: hidden;
   }
 
-  .card-header {
-    padding: 14px 18px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: linear-gradient(to bottom, #fafbfc, #fff);
+  .dashboard-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--sk-red), var(--sk-orange));
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.25s ease;
   }
 
-  .card-header h3 { font-size: 13px; font-weight: 700; letter-spacing: -0.2px; }
+  .dashboard-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(26, 43, 92, 0.08);
+    border-color: var(--navy-light);
+  }
 
-  .card-header .tag {
+  .dashboard-card:hover::before { transform: scaleX(1); }
+
+  .card-icon {
+    width: 44px; height: 44px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+    color: white;
+    display: grid; place-items: center;
+    font-size: 20px;
+    margin-bottom: 4px;
+  }
+
+  .dashboard-card h3 {
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+    color: var(--text);
+  }
+
+  .dashboard-card .desc {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    line-height: 1.55;
+    flex: 1;
+  }
+
+  .card-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 8px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+  }
+
+  .tag {
     font-size: 10px; font-weight: 700;
     padding: 3px 8px; border-radius: 4px;
     background: var(--navy); color: white;
     letter-spacing: 0.3px;
   }
-  .card-header .tag.fast { background: #1a5f3a; }
-  .card-header .tag.ev { background: #0a6e73; }
 
-  .card-body { padding: 18px; }
-
-  .section-divider {
-    margin-top: 28px; padding-top: 20px;
-    border-top: 2px solid var(--border);
-    margin-bottom: 16px;
-  }
-  .section-divider .eyebrow {
-    font-size: 11px; font-weight: 700; letter-spacing: 1px;
-    color: #0a6e73; text-transform: uppercase; margin-bottom: 4px;
-  }
-  .section-divider h3 { font-size: 16px; font-weight: 800; letter-spacing: -0.3px; color: var(--text); }
-  .section-divider p { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
-
-  .callout {
-    background: linear-gradient(135deg, #eaf1ff 0%, #f0f5ff 100%);
-    border-left: 3px solid var(--navy);
-    padding: 14px 18px;
-    border-radius: 6px;
-    margin-bottom: 20px;
-  }
-
-  .callout ul { list-style: none; padding: 0; }
-  .callout li {
-    font-size: 12.5px;
-    padding-left: 16px;
-    position: relative;
-    line-height: 1.6;
-  }
-  .callout li + li { margin-top: 4px; }
-  .callout li::before {
-    content: '■'; position: absolute;
-    left: 0; top: 1px;
-    color: var(--navy); font-size: 8px;
-  }
-  .callout strong {
-    color: var(--navy); font-weight: 700;
-    border-bottom: 2px solid var(--sk-orange);
-    padding-bottom: 1px;
-  }
-
-  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-
-  .grid-kpi {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 14px;
-    margin-bottom: 20px;
-  }
-
-  .kpi {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 16px;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .kpi::after {
-    content: '';
-    position: absolute;
-    top: 0; right: 0;
-    width: 40px; height: 40px;
-    background: var(--sk-red);
-    opacity: 0.06;
-    border-radius: 0 0 0 40px;
-  }
-
-  .kpi .label {
-    font-size: 10.5px;
-    color: var(--text-muted);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 8px;
-  }
-
-  .kpi .value {
-    font-size: 24px; font-weight: 800;
-    color: var(--navy);
-    letter-spacing: -0.8px;
-    font-feature-settings: 'tnum';
-  }
-
-  .kpi .unit {
+  .card-cta {
     font-size: 12px;
-    color: var(--text-muted);
-    font-weight: 600;
-    margin-left: 3px;
-  }
-
-  .kpi .delta { margin-top: 6px; font-size: 11px; font-weight: 600; }
-  .kpi .delta.up { color: var(--success); }
-  .kpi .delta.down { color: var(--sk-red); }
-
-  .chart-wrap { position: relative; height: 280px; }
-  .chart-wrap.tall { height: 400px; }
-  .chart-wrap.xl { height: 440px; }
-  .chart-wrap.short { height: 180px; }
-
-  .tbl {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 12px;
-    font-feature-settings: 'tnum';
-  }
-
-  .tbl th {
-    background: var(--navy);
-    color: white;
-    padding: 8px 10px;
-    text-align: left;
-    font-weight: 600;
-    font-size: 11px;
-  }
-
-  .tbl th.right, .tbl td.right { text-align: right; }
-  .tbl td { padding: 7px 10px; border-bottom: 1px solid var(--border); }
-  .tbl tr:hover td { background: #fafbfc; }
-
-  .tbl tr.total-row td {
-    background: #f0f2f7;
-    font-weight: 700;
-    color: var(--navy);
-    border-top: 2px solid var(--navy);
-  }
-
-  .tbl tr.ms-row td {
-    background: #f8f9fc;
     font-weight: 700;
     color: var(--sk-red);
-    font-size: 11.5px;
-  }
-
-  .tbl .rank {
-    display: inline-block;
-    width: 20px; height: 20px;
-    border-radius: 4px;
-    background: var(--bg);
-    text-align: center;
-    line-height: 20px;
-    font-weight: 700;
-    font-size: 11px;
-    color: var(--navy);
-  }
-
-  .tbl .rank.gold { background: #fff7e0; color: #b8860b; }
-  .tbl .rank.silver { background: #f0f2f7; color: #5a6578; }
-  .tbl .rank.bronze { background: #fbe8d9; color: #a0521b; }
-  .co-name { font-weight: 600; }
-  .highlight-row td { background: #fff8e1 !important; }
-
-  .source {
-    font-size: 10.5px;
-    color: var(--text-light);
-    font-style: italic;
-    padding: 12px 18px;
-    border-top: 1px solid var(--border);
-    background: #fafbfc;
-  }
-
-  .dual-chart {
-    display: grid;
-    grid-template-columns: 150px 1fr;
-    gap: 18px;
-    align-items: stretch;
-  }
-
-  .dual-label {
-    padding: 18px 14px;
-    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-dark) 100%);
-    color: white;
-    border-radius: 8px;
-    text-align: center;
-    font-size: 12.5px;
-    font-weight: 600;
-    line-height: 1.5;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .latest-chip {
-    display: inline-block;
-    padding: 3px 10px;
-    background: #fff3e0;
-    border: 1px dashed var(--sk-orange);
-    border-radius: 4px;
-    color: var(--sk-orange);
-    font-weight: 700;
-    font-size: 10.5px;
-    margin-left: 8px;
-  }
-
-  .split-chart { display: grid; grid-template-columns: 1fr; gap: 0; }
-  .split-chart-block { padding: 16px 18px; }
-  .split-chart-block + .split-chart-block { border-top: 1px solid var(--border); }
-
-  .split-chart-title {
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--navy);
-    margin-bottom: 10px;
-    text-align: center;
-    padding-bottom: 6px;
-    border-bottom: 2px solid var(--navy);
-  }
-
-  .chip-row {
-    display: flex; gap: 6px;
-    flex-wrap: wrap;
-    margin-bottom: 12px;
-  }
-
-  .chip {
-    padding: 5px 10px;
-    border-radius: 14px;
-    font-size: 11px;
-    font-weight: 600;
-    border: 1px solid var(--border);
-    background: white;
-    cursor: pointer;
-    transition: all 0.15s;
     display: inline-flex;
     align-items: center;
-    gap: 5px;
+    gap: 4px;
   }
 
-  .chip:hover { border-color: var(--navy); }
-  .chip.hidden { opacity: 0.4; background: #f5f5f5; }
-  .chip .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .dashboard-card:hover .card-cta { gap: 8px; }
+  .card-cta { transition: gap 0.15s ease; }
 
-  @media (max-width: 1100px) {
-    .grid-2 { grid-template-columns: 1fr; }
-    .grid-kpi { grid-template-columns: repeat(2, 1fr); }
-    .dual-chart { grid-template-columns: 1fr; }
+  footer {
+    text-align: center;
+    padding: 24px 32px 40px;
+    font-size: 11px;
+    color: var(--text-light);
+  }
+
+  @media (max-width: 640px) {
+    .header { padding: 12px 18px; }
+    .page-title { padding: 24px 18px 8px; }
+    main { padding: 16px 18px 40px; }
   }
 </style>
 </head>
 <body>
 
-<header class="header">
+<div class="header">
   <div class="brand">
     <div class="logo">
       <div class="logo-mark">SK</div>
       <div class="brand-text">
         <h1>SK electlink</h1>
-        <p>Domestic CPO Market Dashboard</p>
+        <p>Internal Dashboards</p>
       </div>
     </div>
   </div>
   <div class="header-meta">
-    <span>성장지원팀</span>
-    <span class="date" id="dataUpdatedBadge">Loading...</span>
-  </div>
-</header>
-
-<div class="page-title">
-  <div class="eyebrow">Market Dashboard</div>
-  <h2>Domestic CPO Market Summary</h2>
-  <p id="pageSubtitle">국내 전기차 충전 사업자(CPO) 시장 현황 — Loading...</p>
-  <div id="dataSourceNotice" style="margin-top:10px; padding:8px 12px; background:#fffbeb; border-left:3px solid #f59e0b; border-radius:4px; font-size:11.5px; color:#78350f; display:none;">
-    <strong>ℹ️ 데이터 소스</strong> · <strong>~Feb '26</strong>: MOLIT + MOE 합산 기준 (PPT 원본 유지) · <strong>Mar '26~</strong>: 환경부 OpenAPI 단일 소스, busiNm 법인 통합 기준. 집계 방식 차이로 2월→3월 사이 일부 수치에 단차 발생 가능.
+    <span class="date" id="today"></span>
   </div>
 </div>
 
-<nav class="tabs">
-  <button class="tab active" data-tab="ev">⓪ Domestic EV Market</button>
-  <button class="tab" data-tab="overview">① N/W Market Overview</button>
-  <button class="tab" data-tab="slow">② Slow Charger CPO Landscape</button>
-  <button class="tab" data-tab="fast">③ Fast Charger CPO Landscape</button>
-  <button class="tab" data-tab="concentration">④ Top 3 Concentration</button>
-  <button class="tab" data-tab="share">⑤ Top 3 Market Share</button>
-</nav>
+<div class="page-title">
+  <div class="eyebrow">Home</div>
+  <h2>Dashboards</h2>
+  <p>내부 BI 대시보드 모음 · 원하는 대시보드를 선택하세요.</p>
+</div>
 
 <main>
+  <div class="grid">
 
-  <!-- TAB 0: EV MARKET -->
-  <section class="tab-panel active" id="tab-ev">
-    <div class="grid-kpi" id="evKpiGrid">
-      <div class="kpi"><div class="label">Total Registered EVs</div><div class="value" id="evKpiTotal">—</div><div class="delta" id="evKpiTotalDelta"></div></div>
-      <div class="kpi"><div class="label">Passenger EVs</div><div class="value" id="evKpiPass">—</div><div class="delta up" id="evKpiPassSub" style="font-size:10.5px;color:var(--text-muted)"></div></div>
-      <div class="kpi"><div class="label">EV Penetration Rate</div><div class="value" id="evKpiPen">—</div><div class="delta" id="evKpiPenDelta"></div></div>
-      <div class="kpi"><div class="label">Monthly EV Sales (Latest)</div><div class="value" id="evKpiSales">—</div><div class="delta" id="evKpiSalesDelta"></div></div>
-    </div>
+    <a class="dashboard-card" href="./AEP Dashboard.html">
+      <div class="card-icon">📊</div>
+      <h3>AEP Dashboard</h3>
+      <p class="desc">Domestic CPO Market · 충전기 / 충전소 / 차충비 / EV Market 현황</p>
+      <div class="card-meta">
+        <span class="tag">CPO MARKET</span>
+        <span class="card-cta">대시보드 열기 →</span>
+      </div>
+    </a>
 
-    <div class="grid-2" style="margin-top:20px;">
-      <div class="card">
-        <div class="card-header"><h3>Number of Registered Passenger EVs / Penetration % Trend</h3><span class="tag ev">EV</span></div>
-        <div class="card-body"><div class="chart-wrap" style="height:300px"><canvas id="chartPassengerEV"></canvas></div></div>
-        <div class="source">Source: MOLIT · Nov '24 ~ Mar '26</div>
-      </div>
-      <div class="card">
-        <div class="card-header"><h3>Number of Registered Commercial EVs / Penetration % Trend</h3><span class="tag ev">EV</span></div>
-        <div class="card-body"><div class="chart-wrap" style="height:300px"><canvas id="chartCommercialEV"></canvas></div></div>
-        <div class="source">Source: MOLIT · Nov '24 ~ Mar '26</div>
-      </div>
-    </div>
-
-    <div class="card" style="margin-top:20px;">
-      <div class="card-header"><h3>LTM Domestic EV Sales Trend</h3><span class="tag ev">Sales</span></div>
-      <div class="card-body"><div class="chart-wrap" style="height:380px"><canvas id="chartEvSales"></canvas></div></div>
-      <div class="source">Source: MOLIT, MOE · (1) Passenger EV Sales / Total Passenger Vehicle Sales; (2) Commercial EV Sales / Total Commercial Vehicle Sales · Mar '25 ~ Mar '26</div>
-    </div>
-
-    <div class="card" style="margin-top:20px;">
-      <div class="card-header"><h3>Domestic EV Sector Key Metrics (Cumulative) · Mar '25 ~ Mar '26</h3><span class="tag ev">EV</span></div>
-      <div class="card-body" style="padding:0; overflow-x:auto;">
-        <table class="tbl" id="evMetricsTable"></table>
-      </div>
-      <div class="source">Source: MOLIT, MOE · (1) Passenger EV Sales / Total Passenger Vehicle Sales; (2) Commercial EV Sales / Total Commercial Vehicle Sales</div>
-    </div>
-  </section>
-
-  <!-- TAB 1: OVERVIEW -->
-  <section class="tab-panel" id="tab-overview">
-    <div class="grid-kpi">
-      <div class="kpi" id="nwKpi0">
-        <div class="label">Total Slow Charging Ports</div>
-        <div class="value">—</div>
-        <div class="delta">—</div>
-      </div>
-      <div class="kpi" id="nwKpi1">
-        <div class="label">Total Fast Charging Ports</div>
-        <div class="value">—</div>
-        <div class="delta">—</div>
-      </div>
-      <div class="kpi" id="nwKpi2">
-        <div class="label">Slow · Top 5 M/S</div>
-        <div class="value">—</div>
-        <div class="delta">—</div>
-      </div>
-      <div class="kpi" id="nwKpi3">
-        <div class="label">Fast · Top 5 M/S</div>
-        <div class="value">—</div>
-        <div class="delta">—</div>
-      </div>
-    </div>
-
-    <div class="grid-2">
-      <div class="card">
-        <div class="card-header"><h3># of Slow Charging Ports</h3><span class="tag">Slow</span></div>
-        <div class="card-body"><div class="chart-wrap short"><canvas id="chartSlowPorts"></canvas></div></div>
-      </div>
-      <div class="card">
-        <div class="card-header"><h3># of Fast Charging Ports</h3><span class="tag fast">Fast</span></div>
-        <div class="card-body"><div class="chart-wrap short"><canvas id="chartFastPorts"></canvas></div></div>
-      </div>
-    </div>
-
-    <div class="grid-2" style="margin-top:20px;">
-      <div class="card">
-        <div class="card-header"><h3><em>Top 5 Slow Charging Players Installations</em></h3><span class="tag">Slow</span></div>
-        <div class="card-body" style="padding:0">
-          <table class="tbl install-table">
-            <thead>
-              <tr><th style="width:30px">#</th><th>Company</th><th>Control</th><th class="right">Oct-25</th><th class="right">Nov-25</th><th class="right">Dec-25</th><th class="right">Jan-26</th><th class="right">Feb-26</th></tr>
-            </thead>
-            <tbody id="slowTableBody">
-            </tbody>
-          </table>
-        </div>
-        <div class="source">Source: MOLIT, MOE</div>
-      </div>
-
-      <div class="card">
-        <div class="card-header"><h3><em>Top 5 Fast Charging Players Installations</em></h3><span class="tag fast">Fast</span></div>
-        <div class="card-body" style="padding:0">
-          <table class="tbl install-table">
-            <thead>
-              <tr><th style="width:30px">#</th><th>Company</th><th>Control</th><th class="right">Oct-25</th><th class="right">Nov-25</th><th class="right">Dec-25</th><th class="right">Jan-26</th><th class="right">Feb-26</th></tr>
-            </thead>
-            <tbody id="fastTableBody">
-            </tbody>
-          </table>
-        </div>
-        <div class="source">Source: MOLIT, MOE</div>
-      </div>
-    </div>
-
-    <div class="grid-2" style="margin-top:20px;">
-      <div class="card">
-        <div class="card-header"><h3><em>Top 5 Slow Charger Players M/S (%)</em><span class="latest-chip">Latest M/S</span></h3><span class="tag">Slow</span></div>
-        <div class="card-body"><div class="chart-wrap"><canvas id="chartSlowMS"></canvas></div></div>
-      </div>
-      <div class="card">
-        <div class="card-header"><h3><em>Top 5 Fast Charger Players M/S (%)</em><span class="latest-chip">Latest M/S</span></h3><span class="tag fast">Fast</span></div>
-        <div class="card-body"><div class="chart-wrap"><canvas id="chartFastMS"></canvas></div></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- TAB 2: SLOW -->
-  <section class="tab-panel" id="tab-slow">
-    <div class="callout">
-      <ul>
-        <li>Among the top three charging operators, <strong>GS ChargEV and EverOn</strong> are maintaining a slow-down in their network expansion speed, excluding PowerCube.</li>
-        <li>Meanwhile, <strong>Volt-up & Pluglink</strong> is rapidly growing within the slow charger CPO market, with aggressive expansion plans for 2025 compared to other charging operators.</li>
-      </ul>
-    </div>
-
-    <div class="card">
-      <div class="card-header"><h3>Top 5 (+ Epic) Slow Charger CPO · Charging Ports Trend (Cumulative)</h3><span class="tag">Slow</span></div>
-      <div class="card-body">
-        <div id="slowChips" class="chip-row"></div>
-        <div class="dual-chart">
-          <div class="dual-label">Top 5 (+ Epic)<br>Slow Charger CPO<br>Charging Ports Trend<br>(Cumulative)</div>
-          <div class="chart-wrap xl"><canvas id="chartSlowTrend"></canvas></div>
-        </div>
-      </div>
-      <div class="source">Source: MOLIT, MOE · Based on Charging Ports; Data as of Feb 28, 2026 · Jan '24 ~ Feb '26 (26 months)</div>
-    </div>
-
-    <div class="grid-2" style="margin-top:20px;">
-      <div class="card">
-        <div class="card-header"><h3 id="titleSlowYoY">YoY Growth Rate (Feb'25 → Feb'26)</h3><span class="tag">Slow</span></div>
-        <div class="card-body"><div class="chart-wrap" style="height:260px"><canvas id="chartSlowGrowth"></canvas></div></div>
-      </div>
-      <div class="card">
-        <div class="card-header"><h3 id="titleSlowSnapshot">Latest M/S Snapshot · Feb-26</h3><span class="tag">Slow</span></div>
-        <div class="card-body"><div class="chart-wrap" style="height:260px"><canvas id="chartSlowDonut"></canvas></div></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- TAB 3: FAST -->
-  <section class="tab-panel" id="tab-fast">
-    <div class="callout">
-      <ul>
-        <li>Domestic fast charger CPO market has been rapidly <strong>consolidated under the top 3 players (Epic, Chaevi, EVSIS)</strong> over the past 23-months (~28% m/s as of Nov-25)</li>
-        <li>Since 4Q24, the growth rate of the fast-charging network has slowed down due to a decline in demand caused by the "chasm" and declining investment capability.</li>
-      </ul>
-    </div>
-
-    <div class="card">
-      <div class="card-header"><h3>Top 5¹ Fast Charger CPO · Charging Ports Trend (Cumulative)</h3><span class="tag fast">Fast</span></div>
-      <div class="card-body">
-        <div id="fastChips" class="chip-row"></div>
-        <div class="dual-chart">
-          <div class="dual-label">Top 5¹<br>Fast Charger CPO<br>Charging Ports Trend<br>(Cumulative)</div>
-          <div class="chart-wrap xl"><canvas id="chartFastTrend"></canvas></div>
-        </div>
-      </div>
-      <div class="source">Source: MOLIT, MOE · (1) Excluding government CPO players (MOE, KEPCO); Data as of Feb 28, 2026 · Jan '23 ~ Feb '26 (38 months)</div>
-    </div>
-
-    <div class="grid-2" style="margin-top:20px;">
-      <div class="card">
-        <div class="card-header"><h3 id="titleFastYoY">YoY Growth Rate (Feb'25 → Feb'26)</h3><span class="tag fast">Fast</span></div>
-        <div class="card-body"><div class="chart-wrap" style="height:260px"><canvas id="chartFastGrowth"></canvas></div></div>
-      </div>
-      <div class="card">
-        <div class="card-header"><h3 id="titleFastSnapshot">Latest M/S Snapshot · Feb-26</h3><span class="tag fast">Fast</span></div>
-        <div class="card-body"><div class="chart-wrap" style="height:260px"><canvas id="chartFastDonut"></canvas></div></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- TAB 4: CONCENTRATION -->
-  <section class="tab-panel" id="tab-concentration">
-    <div class="callout">
-      <ul>
-        <li><strong>Epic and EVSIS</strong> has continued to expand fast charger N/W in the <strong>GSMA (Seoul+Gyeonggi+Incheon)</strong>, while <strong>Chaevi has continued to expand fast charger N/W in the regional hubs including Gyeongsangbuk-do region (i.e., Daegu)</strong></li>
-        <li>Top 3 players' charger <strong>N/W concentration on GSMA + 광역시 region continue to remain at around 55~65%</strong></li>
-      </ul>
-    </div>
-
-    <div class="card">
-      <div class="card-header"><h3>GSMA & GSMA + 광역시 Concentration of Top 3 Fast Charger CPO</h3><span class="tag fast">Fast</span></div>
-      <div class="split-chart">
-        <div class="split-chart-block">
-          <div class="split-chart-title">% GSMA concentration of Top 3 Fast Charger CPO</div>
-          <div class="chart-wrap" style="height:300px"><canvas id="chartConcGSMA"></canvas></div>
-        </div>
-        <div class="split-chart-block">
-          <div class="split-chart-title">% GSMA + 광역시 concentration of Top 3 Fast Charger CPO</div>
-          <div class="chart-wrap" style="height:300px"><canvas id="chartConcGSMAMetro"></canvas></div>
-        </div>
-      </div>
-      <div class="source">Source: MOLIT, MOE · Based on Charging Ports; Data as of Feb 28, 2026</div>
-    </div>
-
-    <div class="grid-2" style="margin-top:20px;">
-      <div class="card">
-        <div class="card-header"><h3 id="titleConcSnapshot">Latest Concentration · Feb-26</h3><span class="tag fast">Snapshot</span></div>
-        <div class="card-body"><div class="chart-wrap" style="height:260px"><canvas id="chartConcSnapshot"></canvas></div></div>
-      </div>
-      <div class="card">
-        <div class="card-header"><h3 id="titleConcDelta">Concentration Change (Feb'24 → Feb'26, 2Y)</h3><span class="tag fast">Delta</span></div>
-        <div class="card-body"><div class="chart-wrap" style="height:260px"><canvas id="chartConcChange"></canvas></div></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- TAB 5: MARKET SHARE -->
-  <section class="tab-panel" id="tab-share">
-    <div class="callout">
-      <ul>
-        <li><strong>Top 3 operators experienced a slight decrease in market share</strong> due to a slowdown in their network expansion speed.</li>
-      </ul>
-    </div>
-
-    <div class="card">
-      <div class="card-header"><h3>Top 3 Fast Charger CPO Market Share in GSMA & GSMA + 광역시</h3><span class="tag fast">M/S</span></div>
-      <div class="split-chart">
-        <div class="split-chart-block">
-          <div class="split-chart-title">Top 3 Fast Charger CPO Market Share in GSMA</div>
-          <div class="chart-wrap" style="height:300px"><canvas id="chartMSGSMA"></canvas></div>
-        </div>
-        <div class="split-chart-block">
-          <div class="split-chart-title">Top 3 Fast Charger CPO Market Share in GSMA + 광역시</div>
-          <div class="chart-wrap" style="height:300px"><canvas id="chartMSGSMAMetro"></canvas></div>
-        </div>
-      </div>
-      <div class="source">Source: MOLIT, MOE · Based on Charging Ports; Data as of Feb 28, 2026</div>
-    </div>
-
-    <div class="grid-2" style="margin-top:20px;">
-      <div class="card">
-        <div class="card-header"><h3 id="titleMSComparison">Latest M/S · Feb-26 (GSMA vs GSMA+광역시)</h3><span class="tag fast">Comparison</span></div>
-        <div class="card-body"><div class="chart-wrap" style="height:260px"><canvas id="chartMSCompare"></canvas></div></div>
-      </div>
-      <div class="card">
-        <div class="card-header"><h3 id="titleMSDelta">M/S Change from Peak (Peak → Feb-26)</h3><span class="tag fast">Delta</span></div>
-        <div class="card-body"><div class="chart-wrap" style="height:260px"><canvas id="chartMSDelta"></canvas></div></div>
-      </div>
-    </div>
-  </section>
-
+  </div>
 </main>
 
+<footer>
+  © SK electlink · Internal use only
+</footer>
+
 <script>
-// ============================================================================
-// SK electlink Dashboard — Dynamic Rendering
-// Fetches ./data/dashboard-data.json (built monthly by GitHub Actions).
-// Falls back to ./data/historical.json if dashboard-data.json is missing.
-// ============================================================================
-
-// Tab logic
-document.querySelectorAll('.tab').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
-  });
-});
-
-Chart.defaults.font.family = "'Pretendard', -apple-system, sans-serif";
-Chart.defaults.font.size = 10;
-Chart.defaults.color = '#6b7280';
-Chart.defaults.plugins.legend.labels.boxWidth = 10;
-Chart.defaults.plugins.legend.labels.boxHeight = 10;
-Chart.defaults.plugins.legend.labels.padding = 12;
-Chart.defaults.plugins.legend.labels.font = { size: 11, weight: '600' };
-
-Chart.register(ChartDataLabels);
-Chart.defaults.plugins.datalabels = { display: false };
-
-// Custom plugin: last-point label on the right side
-const lastPointLabel = {
-  id: 'lastPointLabel',
-  afterDatasetsDraw(chart, args, opts) {
-    const { ctx } = chart;
-    const fmt = opts?.format || (v => v?.toLocaleString());
-    const padding = opts?.padding ?? 6;
-    ctx.save();
-    ctx.font = '700 10.5px Pretendard, sans-serif';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    chart.data.datasets.forEach((dataset, i) => {
-      const meta = chart.getDatasetMeta(i);
-      if (meta.hidden) return;
-      let lastIdx = dataset.data.length - 1;
-      while (lastIdx >= 0 && (dataset.data[lastIdx] === null || dataset.data[lastIdx] === undefined)) lastIdx--;
-      if (lastIdx < 0) return;
-      const point = meta.data[lastIdx];
-      if (!point) return;
-      const val = dataset.data[lastIdx];
-      ctx.fillStyle = dataset.borderColor || '#333';
-      ctx.fillText(fmt(val), point.x + padding, point.y);
-    });
-    ctx.restore();
-  }
-};
-
-const C = {
-  gs: '#8b2635', powercube: '#c97a1f', everon: '#e8c26a',
-  voltup: '#3d6b3d', pluglink: '#3a8bd6', epic: '#1a2b5c',
-  chaevi: '#1a2b5c', evsis: '#e8c26a', humax: '#3d6b3d', skel: '#e4002b',
-  // Top 6~10 추가 사업자 색상
-  kef: '#7b2cbf', starkof: '#00a896', easycharger: '#ff6b35',
-  hyundaieng: '#5e60ce', pumpkin: '#e85d04', kevcs: '#006494',
-  lsElink: '#ab3b5c', parkcloud: '#2a9d8f'
-};
-
-// Company name → color (handles multiple variants)
-const COLOR_BY_OP = {
-  'GS차지비': C.gs, 'GS CHARGEV': C.gs, 'GSChargEV': C.gs,
-  '파워큐브': C.powercube, 'PowerCube': C.powercube,
-  '에버온': C.everon, 'EverOn': C.everon,
-  'LG유플러스 볼트업': C.voltup, 'Volt-up': C.voltup,
-  '플러그링크': C.pluglink, 'Pluglink': C.pluglink,
-  'Epic': C.epic, 'SK일렉링크': C.skel, 'SKEL': C.skel,
-  '채비': C.chaevi, 'Chaevi': C.chaevi,
-  '이브이시스': C.evsis, 'EVSIS': C.evsis,
-  '휴맥스이브이': C.humax, 'Humax+JES': C.humax, 'Humax + JES': C.humax,
-  // Top 6~10 추가 사업자
-  '한국전자금융': C.kef, '스타코프': C.starkof, '이지차저': C.easycharger,
-  '현대엔지니어링': C.hyundaieng, '펌프킨': C.pumpkin,
-  '한국전기차충전서비스': C.kevcs, '엘에스이링크': C.lsElink, '파킹클라우드': C.parkcloud,
-};
-const colorOf = name => COLOR_BY_OP[name] || '#888';
-
-// ============================================================================
-// DATA LOADING
-// ============================================================================
-async function loadDashboardData() {
-  const candidates = ['./data/dashboard-data.json', './data/historical.json'];
-  for (const url of candidates) {
-    try {
-      const r = await fetch(url, { cache: 'no-store' });
-      if (!r.ok) continue;
-      const data = await r.json();
-      console.log(`Loaded ${url}`, data._meta || '');
-      data._loaded_from = url;
-      return data;
-    } catch (e) {
-      console.warn(`Failed to fetch ${url}:`, e);
-    }
-  }
-  throw new Error('Could not load any data file. Please serve via HTTP (not file://).');
-}
-
-// ============================================================================
-// RENDERING
-// ============================================================================
-function render(data) {
-  const badge = document.getElementById('dataUpdatedBadge');
-  const subtitle = document.getElementById('pageSubtitle');
-
-  const months = data.months || [];
-  // Fast 차트 x축: slow months 시작점(Jan-24)과 정렬하여 표시 (Jan-23~Dec-23 숨김)
-  const fastMonthsAll = data.months_fast_extended || months;
-  const fastTrimIdx = Math.max(0, fastMonthsAll.indexOf(months[0]));
-  const fastMonths = fastMonthsAll.slice(fastTrimIdx);
-  const trimArr = arr => Array.isArray(arr) ? arr.slice(fastTrimIdx) : arr;
-  const trimTrend = obj => {
-    if (!obj) return obj;
-    const out = {};
-    for (const [k, v] of Object.entries(obj)) {
-      out[k] = k.startsWith('_') ? v : trimArr(v);
-    }
-    return out;
-  };
-  const fastTrend = trimTrend(data.fast_trend);
-  const fastTrendTop10 = trimTrend(data.fast_trend_top10);
-  const latest = data._meta?.latest_month || months[months.length - 1] || 'N/A';
-  const first = months[0] || 'N/A';
-  const gen = data._meta?.generated_at;
-
-  if (badge) {
-    badge.textContent = gen
-      ? `Latest: ${latest} · Updated ${new Date(gen).toLocaleDateString('ko-KR')}`
-      : `Latest: ${latest}`;
-  }
-  if (subtitle) {
-    subtitle.textContent = `국내 전기차 충전 사업자(CPO) 시장 현황 — ${first} ~ ${latest}`;
-  }
-
-  // Dynamic card titles — always reflect latest month
-  const setTitle = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
-  const yoyMonth  = months.length >= 13 ? months[months.length - 13] : months[0];
-  const twoYrAgo  = months.length >= 25 ? months[months.length - 25] : months[0];
-  const fmtShort  = m => m ? m.replace('-', "'") : '';  // "Mar-26" → "Mar'26"
-  setTitle('titleSlowYoY',      `YoY Growth Rate (${fmtShort(yoyMonth)} → ${fmtShort(latest)})`);
-  setTitle('titleFastYoY',      `YoY Growth Rate (${fmtShort(yoyMonth)} → ${fmtShort(latest)})`);
-  setTitle('titleSlowSnapshot', `Latest M/S Snapshot · ${latest}`);
-  setTitle('titleFastSnapshot', `Latest M/S Snapshot · ${latest}`);
-  setTitle('titleConcSnapshot', `Latest Concentration · ${latest}`);
-  setTitle('titleConcDelta',    `Concentration Change (${fmtShort(twoYrAgo)} → ${fmtShort(latest)}, 2Y)`);
-  setTitle('titleMSComparison', `Latest M/S · ${latest} (GSMA vs GSMA+광역시)`);
-  setTitle('titleMSDelta',      `M/S Change from Peak (Peak → ${latest})`);
-
-  // Show data-source notice only when API-sourced months are present (Mar '26 onwards)
-  const hasNewData = data._meta?.new_months_added > 0 || months.some(m => {
-    const mm = m.match(/^(\w+)-(\d+)$/);
-    if (!mm) return false;
-    const monthIdx = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].indexOf(mm[1]);
-    const yy = parseInt(mm[2], 10);
-    // True if month is >= Mar 2026
-    return yy > 26 || (yy === 26 && monthIdx >= 2);
-  });
-  const notice = document.getElementById('dataSourceNotice');
-  if (notice) notice.style.display = hasNewData ? 'block' : 'none';
-
-  if (data.overview_5month) renderOverview(data.overview_5month);
-  renderSlowTrend(months, data.slow_trend || {}, data.slow_trend_top10 || null);
-  renderFastTrend(fastMonths, fastTrend || {}, fastTrendTop10 || null);
-  renderConcentration(months, data.concentration || {});
-  renderMarketShare(months, data.market_share || {});
-  if (data.ev_market) renderEvMarket(data.ev_market);
-}
-
-function renderOverview(ov) {
-  const m = ov.months;
-
-  new Chart(document.getElementById('chartSlowPorts'), {
-    type: 'bar',
-    data: {
-      labels: m,
-      datasets: [
-        { label: '# of Slow Charging Ports (\'000)', data: ov.slow_total_K, backgroundColor: '#1a2b5c', borderRadius: 4, yAxisID: 'y', order: 2 },
-        { type: 'line', label: 'EVs / Slow Charging Ports', data: ov.slow_ev_per_port, borderColor: '#2d4380', backgroundColor: '#2d4380', borderWidth: 2, pointRadius: 4, pointBackgroundColor: '#fff', pointBorderWidth: 2, tension: 0.2, yAxisID: 'y1', order: 1,
-          datalabels: { display: true, anchor: 'end', align: 'top', offset: 2, color: '#fff', font: { size: 11, weight: 'bold' }, formatter: v => v != null ? v.toFixed(2) : '' } }
-      ]
-    },
-    options: {
-      maintainAspectRatio: false,
-      plugins: { legend: { position: 'top', align: 'start' }, datalabels: { display: false } },
-      scales: {
-        y: { beginAtZero: true, grid: { color: '#f0f2f7' }, ticks: { callback: v => v + 'K' } },
-        y1: { position: 'right', min: 2.0, max: 2.3, grid: { display: false } }
-      }
-    }
-  });
-
-  new Chart(document.getElementById('chartFastPorts'), {
-    type: 'bar',
-    data: {
-      labels: m,
-      datasets: [
-        { label: '# of Fast Charging Ports (\'000)', data: ov.fast_total_K, backgroundColor: '#1a5f3a', borderRadius: 4, yAxisID: 'y', order: 2 },
-        { type: 'line', label: 'EVs / Fast Charging Ports', data: ov.fast_ev_per_port, borderColor: '#2d6b4f', backgroundColor: '#2d6b4f', borderWidth: 2, pointRadius: 4, pointBackgroundColor: '#fff', pointBorderWidth: 2, tension: 0.2, yAxisID: 'y1', order: 1,
-          datalabels: { display: true, anchor: 'end', align: 'top', offset: 2, color: '#1a2b5c', font: { size: 11, weight: 'bold' }, formatter: v => v != null ? v.toFixed(1) : '' } }
-      ]
-    },
-    options: {
-      maintainAspectRatio: false,
-      plugins: { legend: { position: 'top', align: 'start' }, datalabels: { display: false } },
-      scales: {
-        y: { beginAtZero: true, grid: { color: '#f0f2f7' }, ticks: { callback: v => v + 'K' } },
-        y1: { position: 'right', min: 15, max: 20, grid: { display: false } }
-      }
-    }
-  });
-
-  renderMSLine('chartSlowMS', m, ov.slow_top5_ms_line, 5, 20);
-  renderMSLine('chartFastMS', m, ov.fast_top5_ms_line, 0, 14);
-
-  // KPI updates
-  const lastIdx = ov.slow_total_K.length - 1;
-  const prevIdx = Math.max(0, lastIdx - 1);
-  updateKPIs({
-    slowLatest: Math.round(ov.slow_total_K[lastIdx] * 1000),
-    slowPrev: Math.round(ov.slow_total_K[prevIdx] * 1000),
-    fastLatest: Math.round(ov.fast_total_K[lastIdx] * 1000),
-    fastPrev: Math.round(ov.fast_total_K[prevIdx] * 1000),
-    slowMS: ov.slow_top5_ms_pct[lastIdx],
-    slowMSPrev: ov.slow_top5_ms_pct[prevIdx],
-    fastMS: ov.fast_top5_ms_pct[lastIdx],
-    fastMSPrev: ov.fast_top5_ms_pct[prevIdx],
-    prevLabel: m[prevIdx]
-  });
-
-  // Table headers
-  renderTableHeaders(m);
-  // Table bodies
-  renderTable('slowTableBody', ov.slow_top5_table, ov.slow_top5_ms_pct, false);
-  renderTable('fastTableBody', ov.fast_top5_table, ov.fast_top5_ms_pct, true);
-}
-
-function renderMSLine(canvasId, months, dataObj, yMin, yMax) {
-  const datasets = Object.entries(dataObj).map(([op, arr]) => ({
-    label: op, data: arr,
-    borderColor: colorOf(op), backgroundColor: colorOf(op),
-    tension: 0.3, pointRadius: 4,
-    borderWidth: op === 'SKEL' ? 3 : 2
-  }));
-  new Chart(document.getElementById(canvasId), {
-    type: 'line',
-    data: { labels: months, datasets },
-    plugins: [lastPointLabel],
-    options: {
-      maintainAspectRatio: false,
-      layout: { padding: { right: 45 } },
-      plugins: {
-        legend: { position: 'bottom' },
-        lastPointLabel: { format: v => v.toFixed(1) + '%' }
-      },
-      scales: { y: { min: yMin, max: yMax, grid: { color: '#f0f2f7' }, ticks: { callback: v => v + '%' } } }
-    }
-  });
-}
-
-function updateKPIs(k) {
-  const set = (id, val, deltaText, deltaUp) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.querySelector('.value').innerHTML = val;
-    const d = el.querySelector('.delta');
-    d.textContent = deltaText;
-    d.className = 'delta ' + (deltaUp ? 'up' : 'down');
-  };
-  const sDelta = k.slowLatest - k.slowPrev;
-  const fDelta = k.fastLatest - k.fastPrev;
-  const sMSDelta = +(k.slowMS - k.slowMSPrev).toFixed(1);
-  const fMSDelta = +(k.fastMS - k.fastMSPrev).toFixed(1);
-
-  set('nwKpi0', `${k.slowLatest.toLocaleString()}<span class="unit">개</span>`,
-      `${sDelta >= 0 ? '▲ +' : '▽ '}${sDelta.toLocaleString()} vs ${k.prevLabel}`, sDelta >= 0);
-  set('nwKpi1', `${k.fastLatest.toLocaleString()}<span class="unit">개</span>`,
-      `${fDelta >= 0 ? '▲ +' : '▽ '}${fDelta.toLocaleString()} vs ${k.prevLabel}`, fDelta >= 0);
-  set('nwKpi2', `${k.slowMS.toFixed(1)}<span class="unit">%</span>`,
-      `${sMSDelta >= 0 ? '▲ +' : '▽ '}${sMSDelta}%p vs ${k.prevLabel}`, sMSDelta >= 0);
-  set('nwKpi3', `${k.fastMS.toFixed(1)}<span class="unit">%</span>`,
-      `${fMSDelta >= 0 ? '▲ +' : '▽ '}${fMSDelta}%p vs ${k.prevLabel}`, fMSDelta >= 0);
-}
-
-function renderTableHeaders(months) {
-  document.querySelectorAll('.install-table thead tr').forEach(tr => {
-    const monthHeaders = months.map(mm => `<th class="right">${mm}</th>`).join('');
-    tr.innerHTML = `<th style="width:30px">#</th><th>Company</th><th>Control</th>${monthHeaders}`;
-  });
-}
-
-function renderTable(bodyId, tableData, msPct, isFast) {
-  const tbody = document.getElementById(bodyId);
-  if (!tbody) return;
-  const controls = isFast
-    ? { 'Chaevi': 'CEO + STIC', 'SKEL': 'AEP + SKN', 'EVSIS': 'Lotte Data Com.', 'Humax+JES': 'Humax Mobility', 'GS CHARGEV': 'GS Energy' }
-    : { 'GS CHARGEV': 'GS Energy', 'PowerCube': 'CEO', 'EverOn': 'CEO', 'Volt-up': 'LG Uplus', 'Pluglink': 'CEO' };
-  const rankClass = ['gold', 'silver', 'bronze', '', ''];
-
-  const entries = Object.entries(tableData);
-  const rows = entries.map(([op, arr], i) => {
-    const cells = arr.map(v => `<td class="right">${v.toLocaleString()}</td>`).join('');
-    const highlight = op === 'SKEL' ? ' class="highlight-row"' : '';
-    const bold = op === 'SKEL' ? v => `<strong>${v}</strong>` : v => v;
-    return `<tr${highlight}><td><span class="rank ${rankClass[i]}">${i+1}</span></td><td class="co-name">${bold(op)}</td><td>${bold(controls[op] || '')}</td>${cells}</tr>`;
-  }).join('');
-
-  const colCount = entries[0][1].length;
-  const totals = Array.from({length: colCount}, (_, ci) => entries.reduce((s, [_, arr]) => s + arr[ci], 0));
-  const totalCells = totals.map(v => `<td class="right">${v.toLocaleString()}</td>`).join('');
-  const totalRow = `<tr class="total-row"><td colspan="3">Total</td>${totalCells}</tr>`;
-
-  const msCells = msPct.map(v => `<td class="right">${v.toFixed(1)}%</td>`).join('');
-  const msRow = `<tr class="ms-row"><td colspan="3">Top 5 Player M/S (%)</td>${msCells}</tr>`;
-
-  tbody.innerHTML = rows + totalRow + msRow;
-}
-
-function renderSlowTrend(months, trend, trendTop10) {
-  const ops5  = Object.keys(trend).filter(k => !k.startsWith('_'));
-  const lineTrend = trendTop10 || trend;
-  const ops10 = Object.keys(lineTrend).filter(k => !k.startsWith('_'));
-  const datasets = ops10.map(op => ({
-    label: op, data: lineTrend[op],
-    borderColor: colorOf(op), backgroundColor: colorOf(op),
-    tension: 0.2, pointRadius: 2.5, borderWidth: 2, pointHoverRadius: 5,
-    spanGaps: true
-  }));
-
-  const chart = new Chart(document.getElementById('chartSlowTrend'), {
-    type: 'line',
-    data: { labels: months, datasets },
-    plugins: [lastPointLabel],
-    options: {
-      maintainAspectRatio: false,
-      layout: { padding: { right: 55 } },
-      interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: { position: 'top' },
-        lastPointLabel: { format: v => v?.toLocaleString() },
-        tooltip: { callbacks: { label: c => `${c.dataset.label}: ${c.parsed.y?.toLocaleString() || '-'}` } }
-      },
-      scales: {
-        y: { beginAtZero: true, max: 80000, grid: { color: '#f0f2f7' }, ticks: { callback: v => (v/1000) + 'K' } },
-        x: { grid: { display: false }, ticks: { maxRotation: 45, minRotation: 45, font: { size: 9 }, autoSkip: false } }
-      }
-    }
-  });
-  renderChips('slowChips', datasets, chart);
-  // YoY/Donut은 Top 5 유지
-  renderYoY('chartSlowGrowth', months, trend, ops5);
-  renderDonut('chartSlowDonut', trend, ops5);
-}
-
-function renderFastTrend(months, trend, trendTop10) {
-  const ops5  = Object.keys(trend).filter(k => !k.startsWith('_'));
-  const lineTrend = trendTop10 || trend;
-  const ops10 = Object.keys(lineTrend).filter(k => !k.startsWith('_'));
-  const datasets = ops10.map(op => ({
-    label: op, data: lineTrend[op],
-    borderColor: colorOf(op), backgroundColor: colorOf(op),
-    tension: 0.2, pointRadius: 2, borderWidth: 2, pointHoverRadius: 5,
-    spanGaps: true
-  }));
-
-  const chart = new Chart(document.getElementById('chartFastTrend'), {
-    type: 'line',
-    data: { labels: months, datasets },
-    plugins: [lastPointLabel],
-    options: {
-      maintainAspectRatio: false,
-      layout: { padding: { right: 50 } },
-      interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: { position: 'top' },
-        lastPointLabel: { format: v => v?.toLocaleString() },
-        tooltip: { callbacks: { label: c => `${c.dataset.label}: ${c.parsed.y?.toLocaleString() || '-'}` } }
-      },
-      scales: {
-        y: { beginAtZero: true, max: 7000, grid: { color: '#f0f2f7' }, ticks: { callback: v => v.toLocaleString() } },
-        x: { grid: { display: false }, ticks: { maxRotation: 45, minRotation: 45, font: { size: 8.5 }, autoSkip: true, maxTicksLimit: 20 } }
-      }
-    }
-  });
-  renderChips('fastChips', datasets, chart);
-  // YoY/Donut은 Top 5 유지
-  renderYoY('chartFastGrowth', months, trend, ops5);
-  renderDonut('chartFastDonut', trend, ops5);
-}
-
-function renderYoY(canvasId, months, trend, ops) {
-  if (months.length < 13) return;
-  const lastIdx = months.length - 1;
-  const yoyIdx = lastIdx - 12;
-  const pct = ops.map(op => {
-    const now = trend[op][lastIdx];
-    const yoy = trend[op][yoyIdx];
-    return yoy > 0 ? +(((now - yoy) / yoy) * 100).toFixed(1) : 0;
-  });
-
-  new Chart(document.getElementById(canvasId), {
-    type: 'bar',
-    data: { labels: ops, datasets: [{ label: 'YoY Growth (%)', data: pct, backgroundColor: ops.map(colorOf), borderRadius: 4 }] },
-    options: {
-      maintainAspectRatio: false, indexAxis: 'y',
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => (c.parsed.x>=0?'+':'') + c.parsed.x + '%' } } },
-      scales: {
-        x: { grid: { color: '#f0f2f7' }, ticks: { callback: v => v + '%' } },
-        y: { grid: { display: false } }
-      }
-    }
-  });
-}
-
-function renderDonut(canvasId, trend, ops) {
-  const lastIdx = trend[ops[0]].length - 1;
-  const data = ops.map(op => trend[op][lastIdx]);
-  new Chart(document.getElementById(canvasId), {
-    type: 'doughnut',
-    data: { labels: ops, datasets: [{ data, backgroundColor: ops.map(colorOf), borderWidth: 2, borderColor: '#fff' }] },
-    options: {
-      maintainAspectRatio: false, cutout: '55%',
-      plugins: {
-        legend: { position: 'right' },
-        tooltip: { callbacks: {
-          label: c => {
-            const total = c.dataset.data.reduce((a,b)=>a+b,0);
-            const pct = ((c.parsed/total)*100).toFixed(1);
-            return `${c.label}: ${c.parsed.toLocaleString()} (${pct}%)`;
-          }
-        }}
-      }
-    }
-  });
-}
-
-function renderChips(containerId, datasets, chart) {
-  const el = document.getElementById(containerId);
-  if (!el) return;
-  el.innerHTML = '';
-  datasets.forEach((ds, i) => {
-    const chip = document.createElement('div');
-    chip.className = 'chip';
-    chip.innerHTML = `<span class="dot" style="background:${ds.borderColor}"></span>${ds.label}`;
-    chip.addEventListener('click', () => {
-      if (chart.isDatasetVisible(i)) { chart.hide(i); chip.classList.add('hidden'); }
-      else { chart.show(i); chip.classList.remove('hidden'); }
-    });
-    el.appendChild(chip);
-  });
-}
-
-function renderConcentration(months, conc) {
-  const ops = ['채비', 'SK일렉링크', '이브이시스'].filter(k => conc[k]);
-
-  // GSMA
-  new Chart(document.getElementById('chartConcGSMA'), {
-    type: 'line',
-    data: {
-      labels: months,
-      datasets: ops.map(op => ({
-        label: op, data: conc[op].GSMA,
-        borderColor: colorOf(op), backgroundColor: colorOf(op),
-        tension: 0.3, pointRadius: 3, borderWidth: 2.5
-      }))
-    },
-    plugins: [lastPointLabel],
-    options: {
-      maintainAspectRatio: false,
-      layout: { padding: { right: 45 } },
-      interaction: { mode: 'index', intersect: false },
-      plugins: { legend: { position: 'top' }, lastPointLabel: { format: v => v.toFixed(1) + '%' } },
-      scales: {
-        y: { min: 20, max: 60, grid: { color: '#f0f2f7' }, ticks: { callback: v => v + '%' } },
-        x: { grid: { display: false }, ticks: { maxRotation: 45, minRotation: 45, font: { size: 9 } } }
-      }
-    }
-  });
-
-  // GSMA + 광역시
-  new Chart(document.getElementById('chartConcGSMAMetro'), {
-    type: 'line',
-    data: {
-      labels: months,
-      datasets: ops.map(op => ({
-        label: op, data: conc[op].GSMA_plus_metro,
-        borderColor: colorOf(op), backgroundColor: colorOf(op),
-        tension: 0.3, pointRadius: 3, borderWidth: 2.5
-      }))
-    },
-    plugins: [lastPointLabel],
-    options: {
-      maintainAspectRatio: false,
-      layout: { padding: { right: 45 } },
-      interaction: { mode: 'index', intersect: false },
-      plugins: { legend: { position: 'top' }, lastPointLabel: { format: v => v.toFixed(1) + '%' } },
-      scales: {
-        y: { min: 40, max: 75, grid: { color: '#f0f2f7' }, ticks: { callback: v => v + '%' } },
-        x: { grid: { display: false }, ticks: { maxRotation: 45, minRotation: 45, font: { size: 9 } } }
-      }
-    }
-  });
-
-  // Latest snapshot
-  const lastIdx = months.length - 1;
-  new Chart(document.getElementById('chartConcSnapshot'), {
-    type: 'bar',
-    data: {
-      labels: ops,
-      datasets: [
-        { label: 'GSMA', data: ops.map(op => conc[op].GSMA[lastIdx]), backgroundColor: '#4a5999', borderRadius: 4 },
-        { label: 'GSMA + 광역시', data: ops.map(op => conc[op].GSMA_plus_metro[lastIdx]), backgroundColor: '#1a2b5c', borderRadius: 4 }
-      ]
-    },
-    options: {
-      maintainAspectRatio: false,
-      plugins: { legend: { position: 'top' } },
-      scales: {
-        y: { min: 0, max: 80, grid: { color: '#f0f2f7' }, ticks: { callback: v => v + '%' } },
-        x: { grid: { display: false } }
-      }
-    }
-  });
-
-  // 2Y change (from 24 months ago, or from first available)
-  const yoyIdx = Math.max(0, lastIdx - 24);
-  const labels = [];
-  const dataArr = [];
-  ops.forEach(op => {
-    labels.push(`${op} (GSMA)`);
-    dataArr.push(+(conc[op].GSMA[lastIdx] - conc[op].GSMA[yoyIdx]).toFixed(1));
-  });
-  ops.forEach(op => {
-    labels.push(`${op} (+광역시)`);
-    dataArr.push(+(conc[op].GSMA_plus_metro[lastIdx] - conc[op].GSMA_plus_metro[yoyIdx]).toFixed(1));
-  });
-
-  new Chart(document.getElementById('chartConcChange'), {
-    type: 'bar',
-    data: { labels, datasets: [{ label: 'Change (%p)', data: dataArr, backgroundColor: c => c.parsed?.x >= 0 ? '#059669' : '#e4002b', borderRadius: 4 }] },
-    options: {
-      maintainAspectRatio: false, indexAxis: 'y',
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => (c.parsed.x>=0?'+':'') + c.parsed.x + '%p' } } },
-      scales: {
-        x: { grid: { color: '#f0f2f7' }, ticks: { callback: v => (v>=0?'+':'') + v + '%p' } },
-        y: { grid: { display: false } }
-      }
-    }
-  });
-}
-
-function renderMarketShare(months, ms) {
-  const ops = ['채비', 'SK일렉링크', '이브이시스'].filter(k => ms[k]);
-
-  new Chart(document.getElementById('chartMSGSMA'), {
-    type: 'line',
-    data: {
-      labels: months,
-      datasets: ops.map(op => ({
-        label: op, data: ms[op].GSMA,
-        borderColor: colorOf(op), backgroundColor: colorOf(op),
-        tension: 0.3, pointRadius: 3, borderWidth: 2.5
-      }))
-    },
-    plugins: [lastPointLabel],
-    options: {
-      maintainAspectRatio: false,
-      layout: { padding: { right: 45 } },
-      interaction: { mode: 'index', intersect: false },
-      plugins: { legend: { position: 'top' }, lastPointLabel: { format: v => v.toFixed(1) + '%' } },
-      scales: {
-        y: { min: 0, max: 18, grid: { color: '#f0f2f7' }, ticks: { callback: v => v + '%' } },
-        x: { grid: { display: false }, ticks: { maxRotation: 45, minRotation: 45, font: { size: 9 } } }
-      }
-    }
-  });
-
-  new Chart(document.getElementById('chartMSGSMAMetro'), {
-    type: 'line',
-    data: {
-      labels: months,
-      datasets: ops.map(op => ({
-        label: op, data: ms[op].GSMA_plus_metro,
-        borderColor: colorOf(op), backgroundColor: colorOf(op),
-        tension: 0.3, pointRadius: 3, borderWidth: 2.5
-      }))
-    },
-    plugins: [lastPointLabel],
-    options: {
-      maintainAspectRatio: false,
-      layout: { padding: { right: 45 } },
-      interaction: { mode: 'index', intersect: false },
-      plugins: { legend: { position: 'top' }, lastPointLabel: { format: v => v.toFixed(1) + '%' } },
-      scales: {
-        y: { min: 0, max: 16, grid: { color: '#f0f2f7' }, ticks: { callback: v => v + '%' } },
-        x: { grid: { display: false }, ticks: { maxRotation: 45, minRotation: 45, font: { size: 9 } } }
-      }
-    }
-  });
-
-  const lastIdx = months.length - 1;
-  new Chart(document.getElementById('chartMSCompare'), {
-    type: 'bar',
-    data: {
-      labels: ops,
-      datasets: [
-        { label: 'GSMA', data: ops.map(op => ms[op].GSMA[lastIdx]), backgroundColor: '#4a5999', borderRadius: 4 },
-        { label: 'GSMA + 광역시', data: ops.map(op => ms[op].GSMA_plus_metro[lastIdx]), backgroundColor: '#1a2b5c', borderRadius: 4 }
-      ]
-    },
-    options: {
-      maintainAspectRatio: false,
-      plugins: { legend: { position: 'top' } },
-      scales: {
-        y: { min: 0, max: 16, grid: { color: '#f0f2f7' }, ticks: { callback: v => v + '%' } },
-        x: { grid: { display: false } }
-      }
-    }
-  });
-
-  // vs Peak
-  const pLabels = [];
-  const pData = [];
-  ops.forEach(op => {
-    const peak = Math.max(...ms[op].GSMA);
-    pLabels.push(`${op} (GSMA)`);
-    pData.push(+(ms[op].GSMA[lastIdx] - peak).toFixed(1));
-  });
-  ops.forEach(op => {
-    const peak = Math.max(...ms[op].GSMA_plus_metro);
-    pLabels.push(`${op} (+광역시)`);
-    pData.push(+(ms[op].GSMA_plus_metro[lastIdx] - peak).toFixed(1));
-  });
-
-  new Chart(document.getElementById('chartMSDelta'), {
-    type: 'bar',
-    data: { labels: pLabels, datasets: [{ label: 'Delta vs Peak (%p)', data: pData, backgroundColor: c => c.parsed?.x >= 0 ? '#059669' : '#e4002b', borderRadius: 4 }] },
-    options: {
-      maintainAspectRatio: false, indexAxis: 'y',
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => (c.parsed.x>=0?'+':'') + c.parsed.x + '%p vs peak' } } },
-      scales: {
-        x: { grid: { color: '#f0f2f7' }, ticks: { callback: v => (v>=0?'+':'') + v + '%p' } },
-        y: { grid: { display: false } }
-      }
-    }
-  });
-}
-
-function renderEvMarket(ev) {
-  const lastIdx = ev.ev_months.length - 1;
-  const prevIdx = lastIdx - 1;
-  const precise = ev.ev_table_precise;
-
-  // KPI: 정밀값 사용
-  const totalLast = precise.total[precise.total.length - 1];
-  const totalPrev = precise.total[precise.total.length - 2];
-  const passLast  = precise.passenger[precise.passenger.length - 1];
-  const commLast  = precise.commercial[precise.commercial.length - 1];
-  const penLast   = ev.ev_total_penetration_pct[lastIdx];
-  const penPrev   = ev.ev_total_penetration_pct[prevIdx];
-  const salesArr  = ev.ev_sales_total;
-  const salesLast = salesArr[salesArr.length - 1];
-  const salesPrev = salesArr[salesArr.length - 2];
-
-  const kpiTotal = document.getElementById('evKpiTotal');
-  if (kpiTotal) kpiTotal.innerHTML = `${totalLast.toLocaleString()}<span class="unit">대</span>`;
-  const kpiTotalDelta = document.getElementById('evKpiTotalDelta');
-  if (kpiTotalDelta) {
-    const d = totalLast - totalPrev;
-    kpiTotalDelta.textContent = `${d>=0?'▲ +':'▽ '}${d.toLocaleString()} vs ${ev.ev_months[prevIdx]}`;
-    kpiTotalDelta.className = 'delta ' + (d >= 0 ? 'up' : 'down');
-  }
-  const kpiPass = document.getElementById('evKpiPass');
-  if (kpiPass) kpiPass.innerHTML = `${passLast.toLocaleString()}<span class="unit">대</span>`;
-  const kpiPassSub = document.getElementById('evKpiPassSub');
-  if (kpiPassSub) kpiPassSub.textContent = `Commercial: ${commLast.toLocaleString()}대`;
-  const kpiPen = document.getElementById('evKpiPen');
-  if (kpiPen) kpiPen.innerHTML = `${penLast}<span class="unit">%</span>`;
-  const kpiPenDelta = document.getElementById('evKpiPenDelta');
-  if (kpiPenDelta && penPrev != null) {
-    const d = +(penLast - penPrev).toFixed(1);
-    kpiPenDelta.textContent = `${d>=0?'▲ +':'▽ '}${d}%p vs ${ev.ev_months[prevIdx]}`;
-    kpiPenDelta.className = 'delta ' + (d >= 0 ? 'up' : 'down');
-  }
-  const kpiSales = document.getElementById('evKpiSales');
-  if (kpiSales) kpiSales.innerHTML = `${salesLast.toLocaleString()}<span class="unit">대</span>`;
-  const kpiSalesDelta = document.getElementById('evKpiSalesDelta');
-  if (kpiSalesDelta) {
-    const d = salesLast - salesPrev;
-    kpiSalesDelta.textContent = `${d>=0?'▲ +':'▽ '}${d.toLocaleString()} vs ${ev.ev_sales_months[ev.ev_sales_months.length-2]}`;
-    kpiSalesDelta.className = 'delta ' + (d >= 0 ? 'up' : 'down');
-  }
-
-  // 마지막 17개월 슬라이스 (Nov-24 ~ Mar-26, index 46~62)
-  const WIN = 17;
-  const winStart = ev.ev_months.length - WIN;
-  const winMonths   = ev.ev_months.slice(winStart);
-  const winPassK    = ev.ev_passenger_K.slice(winStart);
-  const winCommK    = ev.ev_commercial_K.slice(winStart);
-  const winPassPen  = ev.ev_passenger_penetration_pct.slice(winStart);
-  const winCommPen  = ev.ev_commercial_penetration_pct.slice(winStart);
-
-  const lineDatalabelOpts = (color) => ({
-    display: true, anchor: 'end', align: 'top', offset: 2,
-    color, font: { size: 9.5, weight: 'bold' },
-    formatter: v => v != null ? v.toFixed(1) + '%' : ''
-  });
-
-  const barDatalabelOpts = (color) => ({
-    display: true, anchor: 'center', align: 'center',
-    color, font: { size: 9, weight: 'bold' },
-    formatter: v => v != null ? Math.round(v) : ''
-  });
-
-  const evRegOptions = (yMax, y1Min, y1Max, penColor) => ({
-    maintainAspectRatio: false,
-    layout: { padding: { top: 20 } },
-    interaction: { mode: 'index', intersect: false },
-    plugins: {
-      legend: { position: 'top', align: 'start' },
-      datalabels: { display: false }
-    },
-    scales: {
-      x: { grid: { display: false }, ticks: { maxRotation: 45, minRotation: 45, font: { size: 9 } } },
-      y: { beginAtZero: true, max: yMax, grid: { color: '#f0f2f7' }, ticks: { callback: v => v + 'K' } },
-      y1: { position: 'right', min: y1Min, max: y1Max, grid: { display: false }, ticks: { callback: v => v + '%' } }
-    }
-  });
-
-  // Chart 1: Passenger EV
-  new Chart(document.getElementById('chartPassengerEV'), {
-    type: 'bar',
-    data: {
-      labels: winMonths,
-      datasets: [
-        { label: 'Passenger EV (\'000)', data: winPassK, backgroundColor: '#1a2b5c',
-          yAxisID: 'y', order: 2, datalabels: barDatalabelOpts('#fff') },
-        { type: 'line', label: 'Passenger EV Penetration (%)', data: winPassPen,
-          borderColor: '#e4002b', backgroundColor: 'transparent', borderWidth: 2,
-          pointRadius: 4, pointBackgroundColor: '#fff', pointBorderColor: '#e4002b', pointBorderWidth: 2,
-          tension: 0.2, yAxisID: 'y1', order: 1, datalabels: lineDatalabelOpts('#e4002b') }
-      ]
-    },
-    options: evRegOptions(900, 0, 4, '#e4002b')
-  });
-
-  // Chart 2: Commercial EV
-  new Chart(document.getElementById('chartCommercialEV'), {
-    type: 'bar',
-    data: {
-      labels: winMonths,
-      datasets: [
-        { label: 'Commercial EV (\'000)', data: winCommK, backgroundColor: '#3a8bd6',
-          yAxisID: 'y', order: 2, datalabels: barDatalabelOpts('#fff') },
-        { type: 'line', label: 'Commercial EV Penetration (%)', data: winCommPen,
-          borderColor: '#e4002b', backgroundColor: 'transparent', borderWidth: 2,
-          pointRadius: 4, pointBackgroundColor: '#fff', pointBorderColor: '#e4002b', pointBorderWidth: 2,
-          tension: 0.2, yAxisID: 'y1', order: 1, datalabels: lineDatalabelOpts('#e4002b') }
-      ]
-    },
-    options: evRegOptions(200, 6, 10, '#e4002b')
-  });
-
-  // Chart 3: LTM Sales (마지막 13개월: Mar-25~Mar-26)
-  const sWIN = 13;
-  const sStart = ev.ev_sales_months.length - sWIN;
-  const sMonths  = ev.ev_sales_months.slice(sStart);
-  const sPass    = ev.ev_sales_passenger.slice(sStart);
-  const sComm    = ev.ev_sales_commercial.slice(sStart);
-  const sOther   = ev.ev_sales_other.slice(sStart);
-  const sTotal   = ev.ev_sales_share_pct.slice(sStart);
-  const sPassSh  = ev.ev_sales_passenger_share_pct.slice(sStart);
-  const sCommSh  = ev.ev_sales_commercial_share_pct.slice(sStart);
-
-  const lineOpts = (color) => ({
-    display: true, anchor: 'end', align: 'top', offset: 1,
-    color, font: { size: 9, weight: 'bold' },
-    formatter: v => v != null ? v.toFixed(1) + '%' : ''
-  });
-
-  new Chart(document.getElementById('chartEvSales'), {
-    type: 'bar',
-    data: {
-      labels: sMonths,
-      datasets: [
-        { label: 'Passenger EV Sales', data: sPass, backgroundColor: '#1a2b5c', yAxisID: 'y', order: 2,
-          datalabels: { display: true, anchor: 'center', align: 'center', color: '#fff', font: { size: 8.5, weight: 'bold' }, formatter: v => v != null ? v.toLocaleString() : '' } },
-        { label: 'Commercial EV Sales', data: sComm, backgroundColor: '#f59e0b', yAxisID: 'y', order: 2,
-          datalabels: { display: true, anchor: 'center', align: 'center', color: '#fff', font: { size: 8.5, weight: 'bold' }, formatter: v => v != null ? v.toLocaleString() : '' } },
-        { label: 'Other Vehicles', data: sOther, backgroundColor: '#d1d5db', yAxisID: 'y', order: 2,
-          datalabels: { display: true, anchor: 'center', align: 'center', color: '#374151', font: { size: 8.5, weight: 'bold' }, formatter: v => v != null ? v.toLocaleString() : '' } },
-        { type: 'line', label: 'EV Sales Share (%)', data: sTotal,
-          borderColor: '#e4002b', backgroundColor: 'transparent', borderWidth: 2,
-          pointRadius: 4, pointBackgroundColor: '#fff', pointBorderColor: '#e4002b', pointBorderWidth: 2,
-          tension: 0.2, yAxisID: 'y1', order: 1, datalabels: lineOpts('#e4002b') },
-        { type: 'line', label: 'Passenger EV Sales Share ①', data: sPassSh,
-          borderColor: '#3a8bd6', backgroundColor: 'transparent', borderWidth: 2,
-          pointRadius: 4, pointBackgroundColor: '#fff', pointBorderColor: '#3a8bd6', pointBorderWidth: 2,
-          tension: 0.2, yAxisID: 'y1', order: 1, datalabels: lineOpts('#3a8bd6') },
-        { type: 'line', label: 'Commercial EV Sales Share ②', data: sCommSh,
-          borderColor: '#f59e0b', backgroundColor: 'transparent', borderWidth: 2,
-          pointRadius: 4, pointBackgroundColor: '#fff', pointBorderColor: '#f59e0b', pointBorderWidth: 2,
-          tension: 0.2, yAxisID: 'y1', order: 1, datalabels: lineOpts('#f59e0b') }
-      ]
-    },
-    options: {
-      maintainAspectRatio: false,
-      layout: { padding: { top: 28 } },
-      interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: { position: 'top', align: 'start' },
-        datalabels: { display: false }
-      },
-      scales: {
-        x: { stacked: true, grid: { display: false }, ticks: { maxRotation: 45, minRotation: 45, font: { size: 9 } } },
-        y: { stacked: true, beginAtZero: true, max: 200000, grid: { color: '#f0f2f7' }, ticks: { callback: v => v.toLocaleString() } },
-        y1: { position: 'right', min: 0, max: 35, grid: { display: false }, ticks: { callback: v => v + '%' } }
-      }
-    }
-  });
-
-  // Key Metrics Table — ev_table_precise 정밀값 사용
-  const tableEl = document.getElementById('evMetricsTable');
-  if (!tableEl) return;
-  const tMonths = precise.months;
-  const headerCells = tMonths.map(m => `<th class="right" style="white-space:nowrap">${m}</th>`).join('');
-  const fmtN = (arr, i) => arr[i] != null ? arr[i].toLocaleString() : '—';
-
-  // penetration: ev_months에서 Mar-25(index 50) 이후 13개
-  const penStart = ev.ev_months.indexOf('Mar-25');
-  const fmtP = (arr, i) => {
-    const v = arr[penStart + i];
-    return v != null ? v.toFixed(1) + '%' : '—';
-  };
-
-  tableEl.innerHTML = `
-    <thead><tr><th style="min-width:220px"></th>${headerCells}</tr></thead>
-    <tbody>
-      <tr><td style="white-space:nowrap;font-weight:700">Cumulative # of Registered EV</td>${tMonths.map((_,i)=>`<td class="right">${fmtN(precise.total,i)}</td>`).join('')}</tr>
-      <tr><td style="white-space:nowrap;padding-left:16px">Passenger EV</td>${tMonths.map((_,i)=>`<td class="right">${fmtN(precise.passenger,i)}</td>`).join('')}</tr>
-      <tr><td style="white-space:nowrap;padding-left:16px">Commercial EV</td>${tMonths.map((_,i)=>`<td class="right">${fmtN(precise.commercial,i)}</td>`).join('')}</tr>
-      <tr class="ms-row"><td style="white-space:nowrap">EV Penetration Rate</td>${tMonths.map((_,i)=>`<td class="right">${fmtP(ev.ev_total_penetration_pct,i)}</td>`).join('')}</tr>
-      <tr><td style="white-space:nowrap;padding-left:16px;color:var(--text-muted)">Passenger EV ①</td>${tMonths.map((_,i)=>`<td class="right" style="color:var(--text-muted)">${fmtP(ev.ev_passenger_penetration_pct,i)}</td>`).join('')}</tr>
-      <tr><td style="white-space:nowrap;padding-left:16px;color:var(--text-muted)">Commercial EV ②</td>${tMonths.map((_,i)=>`<td class="right" style="color:var(--text-muted)">${fmtP(ev.ev_commercial_penetration_pct,i)}</td>`).join('')}</tr>
-    </tbody>`;
-}
-
-// ============================================================================
-// BOOT
-// ============================================================================
-(async () => {
-  try {
-    const data = await loadDashboardData();
-    render(data);
-  } catch (e) {
-    console.error(e);
-    const badge = document.getElementById('dataUpdatedBadge');
-    if (badge) badge.textContent = '⚠ Load failed';
-    const subtitle = document.getElementById('pageSubtitle');
-    if (subtitle) subtitle.innerHTML = `<span style="color:#e4002b">데이터 로드 실패. GitHub Pages 또는 로컬 서버(python -m http.server)로 실행하세요.</span>`;
-  }
-})();
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  document.getElementById('today').textContent = `${yyyy}-${mm}-${dd}`;
 </script>
+
 </body>
 </html>

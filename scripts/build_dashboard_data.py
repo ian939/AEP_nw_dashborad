@@ -3,7 +3,7 @@
 
 입력: data/monthly/*.json (월별 스냅샷)
      data/historical.json (PPT에서 추출한 과거 Jan '23 ~ Feb '26 데이터)
-출력: data/dashboard-data.json (대시보드 index.html이 fetch하는 파일)
+출력: data/dashboard-data.json (대시보드 AEP Dashboard.html이 fetch하는 파일)
 
 정책:
 - 과거 데이터(historical.json)는 PPT 원본 유지 (재계산하지 않음)
