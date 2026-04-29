@@ -62,8 +62,21 @@
   .brand-text p { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
 
   .header-meta {
-    display: flex; align-items: center; gap: 16px;
+    display: flex; align-items: center; gap: 10px;
     font-size: 11px; color: var(--text-muted);
+  }
+
+  .header-meta a.home-link {
+    color: var(--text-muted);
+    text-decoration: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    transition: all 0.15s;
+  }
+  .header-meta a.home-link:hover {
+    background: var(--bg);
+    color: var(--navy);
   }
 
   .header-meta .date {
@@ -409,6 +422,7 @@
     </div>
   </div>
   <div class="header-meta">
+    <a href="./index.html" class="home-link">← 홈</a>
     <span>성장지원팀</span>
     <span class="date" id="dataUpdatedBadge">Loading...</span>
   </div>
