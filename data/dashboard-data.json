@@ -1883,7 +1883,7 @@
       4.87,
       31.05,
       28.84,
-      19.78
+      25.58
     ],
     "ev_sales_commercial_share_pct": [
       13.93,
@@ -1930,7 +1930,7 @@
       3.79,
       17.17,
       15.42,
-      5.8
+      25.61
     ],
     "ev_table_precise": {
       "months": [
@@ -2720,7 +2720,7 @@
     ]
   },
   "_meta": {
-    "generated_at": "2026-05-15T14:06:20.690592",
+    "generated_at": "2026-05-15T15:26:28.895556",
     "total_months": 28,
     "latest_month": "Apr-26",
     "historical_months": 26,

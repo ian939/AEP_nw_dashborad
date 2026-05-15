@@ -334,6 +334,32 @@ def append_ev_sales_from_registrations(result: dict) -> dict:
         other_mo    = (total_veh - total_ev_mo) if total_veh else None
         share_pct   = round(total_ev_mo / total_veh * 100, 2) if total_veh else None
 
+        # 승용/상용 share: 직전 historical share를 역산해서 카테고리별 차량 분모 비율을 도출.
+        # data.go.kr API가 카테고리별 전체차량을 별도로 주지 않으므로 직전 비율 carry-forward.
+        # (정확한 값을 원하면 fetch_ev_registration.py에 useFuelCode 없는 prpos 호출 3개 추가 필요)
+        pass_shares = ev.get("ev_sales_passenger_share_pct", [])
+        comm_shares = ev.get("ev_sales_commercial_share_pct", [])
+        pass_sales  = ev.get("ev_sales_passenger", [])
+        comm_sales  = ev.get("ev_sales_commercial", [])
+        new_pass_share = new_comm_share = None
+        for i in range(len(pass_shares) - 1, -1, -1):
+            pps = pass_shares[i] if i < len(pass_shares) else None
+            css = comm_shares[i] if i < len(comm_shares) else None
+            pps_sales = pass_sales[i] if i < len(pass_sales) else None
+            css_sales = comm_sales[i] if i < len(comm_sales) else None
+            if pps and css and pps_sales and css_sales:
+                prev_pass_total = pps_sales / (pps / 100)
+                prev_comm_total = css_sales / (css / 100)
+                prev_total = prev_pass_total + prev_comm_total
+                if prev_total > 0 and total_veh > 0:
+                    pass_ratio = prev_pass_total / prev_total
+                    comm_ratio = prev_comm_total / prev_total
+                    new_pass_total = total_veh * pass_ratio
+                    new_comm_total = total_veh * comm_ratio
+                    new_pass_share = round(pass_ev_mo / new_pass_total * 100, 2) if new_pass_total > 0 else None
+                    new_comm_share = round(comm_ev_mo / new_comm_total * 100, 2) if new_comm_total > 0 else None
+                break
+
         ev.setdefault("ev_sales_months", []).append(reg_label)
         ev.setdefault("ev_sales_total", []).append(total_ev_mo)
         ev.setdefault("ev_sales_passenger", []).append(pass_ev_mo)
@@ -341,13 +367,10 @@ def append_ev_sales_from_registrations(result: dict) -> dict:
         ev.setdefault("ev_sales_other", []).append(other_mo)
         ev.setdefault("ev_sales_total_vehicles", []).append(total_veh)
         ev.setdefault("ev_sales_share_pct", []).append(share_pct)
-        ev.setdefault("ev_sales_passenger_share_pct", []).append(
-            round(pass_ev_mo / total_veh * 100, 2) if total_veh else None
-        )
-        ev.setdefault("ev_sales_commercial_share_pct", []).append(
-            round(comm_ev_mo / total_veh * 100, 2) if total_veh else None
-        )
-        print(f"  [ev_sales] {reg_label} 추가 (monthly_new EV {total_ev_mo:,} / 전체차량 {total_veh:,})")
+        ev.setdefault("ev_sales_passenger_share_pct", []).append(new_pass_share)
+        ev.setdefault("ev_sales_commercial_share_pct", []).append(new_comm_share)
+        print(f"  [ev_sales] {reg_label} 추가 (EV {total_ev_mo:,} / 전체 {total_veh:,} → "
+              f"total {share_pct}% · pass {new_pass_share}% · comm {new_comm_share}%)")
 
     result["ev_market"] = ev
     return result
