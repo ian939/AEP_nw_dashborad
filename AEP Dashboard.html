@@ -1534,11 +1534,12 @@ function renderEvMarket(ev) {
   const headerCells = tMonths.map(m => `<th class="right" style="white-space:nowrap">${m}</th>`).join('');
   const fmtN = (arr, i) => arr[i] != null ? arr[i].toLocaleString() : '—';
 
-  // penetration: ev_months에서 Mar-25(index 50) 이후 13개
-  const penStart = ev.ev_months.indexOf('Mar-25');
+  // penetration: precise.months의 첫 월을 ev_months에서 찾아 동기화
+  // (precise.months가 ev_months 끝에서 13개 슬라이스이므로 첫 월 위치 = 시작 인덱스)
+  const penStart = ev.ev_months.indexOf(precise.months[0]);
   const fmtP = (arr, i) => {
     const v = arr[penStart + i];
-    return v != null ? v.toFixed(1) + '%' : '—';
+    return v != null ? v.toFixed(2) + '%' : '—';
   };
 
   tableEl.innerHTML = `
