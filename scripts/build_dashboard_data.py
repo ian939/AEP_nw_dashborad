@@ -16,6 +16,7 @@ Usage:
 """
 
 import json
+import re
 import sys
 from pathlib import Path
 from datetime import datetime
@@ -46,6 +47,19 @@ def month_to_label(ym: str) -> str:
     y, m = ym.split("-")
     names = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
     return f"{names[int(m)-1]}-{y[2:]}"
+
+
+def find_latest_ev_reg(target_ym: str) -> Path | None:
+    """target_ym 이하 중 가장 최근의 ev_registration 파일 경로를 반환.
+    스냅샷 월(예: 2026-05)에 대응하는 ev_reg 파일이 없을 때,
+    가장 최근에 보고된 EV 누적치(예: 2026-04.json)를 사용하기 위함."""
+    candidates = sorted(
+        f for f in EV_REG_DIR.glob("*.json")
+        if f.stem != "cumulative"
+        and re.match(r"^\d{4}-\d{2}$", f.stem)
+        and f.stem <= target_ym
+    )
+    return candidates[-1] if candidates else None
 
 
 def load_historical() -> dict:
@@ -140,8 +154,10 @@ def merge_into_dashboard(historical: dict, snapshots: list) -> dict:
             print(f"  [append] {label}")
 
         # EV 신규등록 데이터로 차충비(EVs/port) 계산 — historical 월 포함
-        ev_reg_file = EV_REG_DIR / f"{ym}.json"
-        if ev_reg_file.exists():
+        # 스냅샷 ym과 동일한 ev_reg가 없으면 가장 최근(<=ym) 파일을 fallback으로 사용
+        # (예: 5월 스냅샷 + 4월 신규등록 → 4월말 누적으로 5월 차충비 산정)
+        ev_reg_file = find_latest_ev_reg(ym)
+        if ev_reg_file is not None:
             ev_reg = json.loads(ev_reg_file.read_text(encoding="utf-8"))
             cum_ev = ev_reg["cumulative"]["total_ev"]
             slow_total = snap["slow"]["total"]
@@ -164,6 +180,10 @@ def merge_into_dashboard(historical: dict, snapshots: list) -> dict:
             # ev_market 배열 업데이트 (신규 월만)
             if not already_in_historical:
                 result = _append_ev_market(result, label, ym, ev_reg, snap)
+
+    # EV 신규등록 파일을 직접 순회해 ev_sales_* 보장
+    # (스냅샷 월과 등록 월이 다를 때, 또는 historical에 없는 월을 누적)
+    result = append_ev_sales_from_registrations(result)
 
     # EV per port: None인 월은 직전 알려진 값으로 보간
     last_slow_ev = None
@@ -225,30 +245,8 @@ def _append_ev_market(result: dict, label: str, ym: str,
     ev["ev_passenger_penetration_pct"].append(None)
     ev["ev_commercial_penetration_pct"].append(None)
 
-    # 월간 판매 (신규등록)
-    ev_sales_label = f"{label}"  # ex) Apr-26
-    if ev_sales_label not in ev.get("ev_sales_months", []):
-        total_veh    = monthly.get("total_vehicles", 0)
-        total_ev_mo  = monthly.get("total_ev", 0)
-        pass_ev_mo   = monthly.get("passenger_ev", 0)
-        comm_ev_mo   = monthly.get("commercial_ev", 0)
-        other_mo     = total_veh - total_ev_mo if total_veh else None
-        share_pct    = round(total_ev_mo / total_veh * 100, 2) if total_veh else None
-
-        ev["ev_sales_months"].append(ev_sales_label)
-        ev["ev_sales_passenger"].append(pass_ev_mo)
-        ev["ev_sales_commercial"].append(comm_ev_mo)
-        ev["ev_sales_total"].append(total_ev_mo)
-        ev["ev_sales_other"].append(other_mo)
-        ev["ev_sales_total_vehicles"].append(total_veh)
-        ev["ev_sales_share_pct"].append(share_pct)
-        # 승용/상용 개별 비중: 직전 보간(None 허용)
-        ev["ev_sales_passenger_share_pct"].append(
-            round(pass_ev_mo / total_veh * 100, 2) if total_veh else None
-        )
-        ev["ev_sales_commercial_share_pct"].append(
-            round(comm_ev_mo / total_veh * 100, 2) if total_veh else None
-        )
+    # 월간 판매(ev_sales_*)는 _append_ev_sales 별도 패스에서 처리.
+    # (스냅샷 ym ≠ 등록 ym 인 경우 대비 — 5월 스냅샷 + 4월 신규등록 등)
 
     # ev_table_precise: 마지막 13개월 재계산
     months_13 = ev["ev_months"][-13:]
@@ -267,6 +265,52 @@ def _append_ev_market(result: dict, label: str, ym: str,
 
     result["ev_market"] = ev
     print(f"  [ev_market] {label} 추가 완료 (누적EV {total_K}K)")
+    return result
+
+
+def append_ev_sales_from_registrations(result: dict) -> dict:
+    """data/ev_registration/*.json 전체를 순회하여 ev_sales_* 배열에 누락 월을 추가.
+    스냅샷 월(ym in monthly/)과 등록 월(ym in ev_registration/)이 다를 수 있으므로
+    등록 파일을 단일 소스로 두고 한 번에 처리한다."""
+    ev = result.get("ev_market")
+    if ev is None:
+        return result
+
+    ev_reg_files = sorted(
+        f for f in EV_REG_DIR.glob("*.json")
+        if f.stem != "cumulative"
+        and re.match(r"^\d{4}-\d{2}$", f.stem)
+    )
+
+    for ev_file in ev_reg_files:
+        ev_reg = json.loads(ev_file.read_text(encoding="utf-8"))
+        reg_label = month_to_label(ev_reg["year_month"])
+        if reg_label in ev.get("ev_sales_months", []):
+            continue
+        monthly = ev_reg.get("monthly_new", {})
+        total_veh   = monthly.get("total_vehicles", 0)
+        total_ev_mo = monthly.get("total_ev", 0)
+        pass_ev_mo  = monthly.get("passenger_ev", 0)
+        comm_ev_mo  = monthly.get("commercial_ev", 0)
+        other_mo    = (total_veh - total_ev_mo) if total_veh else None
+        share_pct   = round(total_ev_mo / total_veh * 100, 2) if total_veh else None
+
+        ev.setdefault("ev_sales_months", []).append(reg_label)
+        ev.setdefault("ev_sales_total", []).append(total_ev_mo)
+        ev.setdefault("ev_sales_passenger", []).append(pass_ev_mo)
+        ev.setdefault("ev_sales_commercial", []).append(comm_ev_mo)
+        ev.setdefault("ev_sales_other", []).append(other_mo)
+        ev.setdefault("ev_sales_total_vehicles", []).append(total_veh)
+        ev.setdefault("ev_sales_share_pct", []).append(share_pct)
+        ev.setdefault("ev_sales_passenger_share_pct", []).append(
+            round(pass_ev_mo / total_veh * 100, 2) if total_veh else None
+        )
+        ev.setdefault("ev_sales_commercial_share_pct", []).append(
+            round(comm_ev_mo / total_veh * 100, 2) if total_veh else None
+        )
+        print(f"  [ev_sales] {reg_label} 추가 (monthly_new EV {total_ev_mo:,} / 전체차량 {total_veh:,})")
+
+    result["ev_market"] = ev
     return result
 
 
