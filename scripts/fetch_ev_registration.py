@@ -11,6 +11,7 @@
 """
 
 import os
+import io
 import json
 import time
 import requests
@@ -63,7 +64,7 @@ def fetch_count(yr: str, month: str, sido_code: str,
     for attempt in range(retries):
         try:
             resp = requests.get(URL, params=params, timeout=30)
-            df = pd.read_xml(resp.content).fillna(0)
+            df = pd.read_xml(io.BytesIO(resp.content)).fillna(0)
             return int(df["dtaCo"].dropna().values[1])
         except Exception as e:
             last_err = e
