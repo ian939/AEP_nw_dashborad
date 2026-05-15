@@ -473,11 +473,11 @@
     <div class="card" style="margin-top:20px;">
       <div class="card-header"><h3>LTM Domestic EV Sales Trend</h3><span class="tag ev">Sales</span></div>
       <div class="card-body"><div class="chart-wrap" style="height:380px"><canvas id="chartEvSales"></canvas></div></div>
-      <div class="source">Source: MOLIT, MOE · (1) Passenger EV Sales / Total Passenger Vehicle Sales; (2) Commercial EV Sales / Total Commercial Vehicle Sales · Mar '25 ~ Mar '26</div>
+      <div class="source" id="evSalesSource">Source: MOLIT, MOE · (1) Passenger EV Sales / Total Passenger Vehicle Sales; (2) Commercial EV Sales / Total Commercial Vehicle Sales</div>
     </div>
 
     <div class="card" style="margin-top:20px;">
-      <div class="card-header"><h3>Domestic EV Sector Key Metrics (Cumulative) · Mar '25 ~ Mar '26</h3><span class="tag ev">EV</span></div>
+      <div class="card-header"><h3 id="evMetricsTitle">Domestic EV Sector Key Metrics (Cumulative)</h3><span class="tag ev">EV</span></div>
       <div class="card-body" style="padding:0; overflow-x:auto;">
         <table class="tbl" id="evMetricsTable"></table>
       </div>
@@ -1541,6 +1541,17 @@ function renderEvMarket(ev) {
     const v = arr[penStart + i];
     return v != null ? v.toFixed(2) + '%' : '—';
   };
+
+  // 카드 타이틀 / source 라벨 동적 갱신 (정적 'Mar 25 ~ Mar 26' 하드코딩 제거)
+  const monthRangeLabel = `${precise.months[0].replace('-', " '")} ~ ${precise.months[precise.months.length - 1].replace('-', " '")}`;
+  const titleEl = document.getElementById('evMetricsTitle');
+  if (titleEl) titleEl.textContent = `Domestic EV Sector Key Metrics (Cumulative) · ${monthRangeLabel}`;
+  const salesSourceEl = document.getElementById('evSalesSource');
+  if (salesSourceEl && ev.ev_sales_months && ev.ev_sales_months.length) {
+    const sStart = ev.ev_sales_months[Math.max(0, ev.ev_sales_months.length - 13)].replace('-', " '");
+    const sEnd   = ev.ev_sales_months[ev.ev_sales_months.length - 1].replace('-', " '");
+    salesSourceEl.textContent = `Source: MOLIT, MOE · (1) Passenger EV Sales / Total Passenger Vehicle Sales; (2) Commercial EV Sales / Total Commercial Vehicle Sales · ${sStart} ~ ${sEnd}`;
+  }
 
   tableEl.innerHTML = `
     <thead><tr><th style="min-width:220px"></th>${headerCells}</tr></thead>
