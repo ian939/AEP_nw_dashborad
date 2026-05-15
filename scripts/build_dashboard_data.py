@@ -237,13 +237,52 @@ def _append_ev_market(result: dict, label: str, ym: str,
     comm_K  = round(cum["commercial_ev"] / 1000, 3)
     total_K = round(cum["total_ev"]      / 1000, 3)
 
+    # 누적 EV 시계열 — 새 월 append 전에 직전 penetration으로 추정값 계산
+    # (cum_veh_prev = prev_cum_ev / prev_pen → cum_veh_new = + monthly_new_vehicles)
+    monthly_new_veh = monthly.get("total_vehicles", 0)
+
+    def _last_nonnull(arr):
+        for v in reversed(arr or []):
+            if v is not None:
+                return v
+        return None
+
+    def _estimate_total_pen(pen_arr, K_arr, new_cum_K, monthly_new_veh):
+        if monthly_new_veh <= 0:
+            return None
+        for i in range(len(pen_arr) - 1, -1, -1):
+            if pen_arr[i] is not None and i < len(K_arr) and K_arr[i]:
+                prev_total_veh = (K_arr[i] * 1000) / (pen_arr[i] / 100)
+                new_total_veh = prev_total_veh + monthly_new_veh
+                return round((new_cum_K * 1000) / new_total_veh * 100, 2)
+        return None
+
+    new_pen_total = _estimate_total_pen(
+        ev.get("ev_total_penetration_pct", []),
+        ev.get("ev_total_K", []),
+        total_K,
+        monthly_new_veh,
+    )
+    # 승용/상용 penetration: monthly_new 차량의 승용·상용 분할을 알 수 없으므로
+    # 직전 ratio(승용 pen ÷ 전체 pen)로 스케일하여 추세 유지
+    last_total_pen = _last_nonnull(ev.get("ev_total_penetration_pct", []))
+    last_pass_pen  = _last_nonnull(ev.get("ev_passenger_penetration_pct", []))
+    last_comm_pen  = _last_nonnull(ev.get("ev_commercial_penetration_pct", []))
+    if new_pen_total is not None and last_total_pen:
+        ratio_p = (last_pass_pen / last_total_pen) if last_pass_pen else None
+        ratio_c = (last_comm_pen / last_total_pen) if last_comm_pen else None
+        new_pen_pass = round(new_pen_total * ratio_p, 2) if ratio_p else None
+        new_pen_comm = round(new_pen_total * ratio_c, 2) if ratio_c else None
+    else:
+        new_pen_pass = new_pen_comm = None
+
     ev["ev_months"].append(label)
     ev["ev_passenger_K"].append(pass_K)
     ev["ev_commercial_K"].append(comm_K)
     ev["ev_total_K"].append(total_K)
-    ev["ev_total_penetration_pct"].append(None)      # 차량 누적 없어 계산 불가
-    ev["ev_passenger_penetration_pct"].append(None)
-    ev["ev_commercial_penetration_pct"].append(None)
+    ev["ev_total_penetration_pct"].append(new_pen_total)
+    ev["ev_passenger_penetration_pct"].append(new_pen_pass)
+    ev["ev_commercial_penetration_pct"].append(new_pen_comm)
 
     # 월간 판매(ev_sales_*)는 _append_ev_sales 별도 패스에서 처리.
     # (스냅샷 ym ≠ 등록 ym 인 경우 대비 — 5월 스냅샷 + 4월 신규등록 등)

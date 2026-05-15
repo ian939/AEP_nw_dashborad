@@ -116,9 +116,27 @@ def main():
     prev = json.loads(cum_file.read_text(encoding="utf-8"))
     print(f"\n[누적 이전] {prev['year_month']} → total_ev={prev['total_ev']:,}")
 
-    new_total_ev   = prev["total_ev"]   + total_ev
-    new_pass_ev    = prev["passenger_ev"]  + passenger_ev
-    new_comm_ev    = prev["commercial_ev"] + commercial_ev
+    # 멱등성 가드: 같은 ym으로 재실행 시 이전 월의 누적을 재구성 (중복합산 방지)
+    if prev["year_month"] == ym:
+        monthly_path_existing = EV_REG_DIR / f"{ym}.json"
+        if monthly_path_existing.exists():
+            prev_monthly = json.loads(monthly_path_existing.read_text(encoding="utf-8"))
+            print(f"[idempotent] {ym} 이미 누적에 반영됨 — 이전 월 기준으로 되돌려 재계산")
+            prev_total_ev   = prev["total_ev"]      - prev_monthly["monthly_new"]["total_ev"]
+            prev_pass_ev    = prev["passenger_ev"]  - prev_monthly["monthly_new"]["passenger_ev"]
+            prev_comm_ev    = prev["commercial_ev"] - prev_monthly["monthly_new"]["commercial_ev"]
+        else:
+            prev_total_ev = prev["total_ev"]
+            prev_pass_ev  = prev["passenger_ev"]
+            prev_comm_ev  = prev["commercial_ev"]
+    else:
+        prev_total_ev = prev["total_ev"]
+        prev_pass_ev  = prev["passenger_ev"]
+        prev_comm_ev  = prev["commercial_ev"]
+
+    new_total_ev   = prev_total_ev + total_ev
+    new_pass_ev    = prev_pass_ev  + passenger_ev
+    new_comm_ev    = prev_comm_ev  + commercial_ev
 
     print(f"[누적 갱신] {ym} → total_ev={new_total_ev:,}")
 

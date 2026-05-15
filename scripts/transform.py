@@ -245,11 +245,16 @@ def main():
         input_path = find_latest_raw()
     print(f"입력: {input_path}")
 
-    # 저장 월
+    # 저장 월: 디폴트는 "전월" (5/15 실행 → 4월 보고서로 라벨링).
+    # data.go.kr EV 신규등록 API도 전월 데이터를 반환하므로 ym이 자연 정렬됨.
     if args.year_month:
         year_month = args.year_month
     else:
-        year_month = datetime.now().strftime("%Y-%m")
+        today = datetime.now()
+        if today.month == 1:
+            year_month = f"{today.year - 1}-12"
+        else:
+            year_month = f"{today.year}-{today.month - 1:02d}"
     print(f"저장 월: {year_month}")
     if args.dry_run:
         print("[DRY-RUN] 파일 저장 없이 요약만 출력합니다.")

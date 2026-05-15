@@ -259,7 +259,7 @@
     }
   },
   "_meta": {
-    "year_month": "2026-05",
+    "year_month": "2026-04",
     "source_file": "raw_20260515.parquet",
     "processed_at": "2026-05-15T04:37:05.806921",
     "raw_row_count": 509605
