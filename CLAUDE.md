@@ -174,3 +174,34 @@ const penStart = ev.ev_months.indexOf(precise.months[0]);  // ← 동적 결정
 1. `repo/<Dashboard Name>.html` 생성 (AEP 톤앤매너 — `--navy`, `--sk-red` 토큰 재사용)
 2. `repo/index.html` 의 `<div class="grid">` 안에 카드 블록 복제 (href·타이틀·설명·tag만 교체)
 3. 자동/수동 갱신 주기 tag (`tag-auto`/`tag-manual`) 명시
+
+---
+
+## 11. 섹션⑥ 충전기 신규/철거 리포트 (Charger Deployment & Removal)
+
+AEP Dashboard 탭 ⑥. 월 스냅샷 비교로 충전기 신규/철거를 완속·급속으로 나눠 분석한다.
+별도 수집 레포에 의존하지 않고 **AEP 월간 워크플로 내부에서 자동 갱신**된다.
+
+### 데이터 흐름
+1. `fetch_api.py` 가 이미 받는 `data/raw/raw_YYYYMMDD.parquet`(환경부 전체 스냅샷)이 원천.
+2. `scripts/charger_report/build_snapshots.py --ingest <raw>` → 슬림 스냅샷 `data/charger_snapshots/{MMM-YY}.parquet` 생성·append·prune(N_MONTHS=4). 라벨=**스냅샷 당월**(예: 5/15 실행 → `May-26`). AEP 메인 KPI의 "전월" 라벨과 다른 자기완결 서브리포트.
+3. `scripts/charger_report/analyze.py` (collector SSOT 무수정) → `output/report_data.json` + xlsx.
+4. `scripts/charger_report/verify.py` (독립 재계산 게이트) → 마지막 줄 **`✅ 전체 검증 통과`** 일 때만 발행.
+5. `scripts/build_charger_deployment.py` 가 위를 오케스트레이션하고 통과분을 **`data/charger_deployment.json`**(대시보드 fetch 대상)으로 복사.
+6. 워크플로: `monthly-update.yml` 의 `Build dashboard data` 뒤 `Build charger deployment report` 스텝. `git add data/` 가 스냅샷·발행본 자동 포함.
+
+### 절대 규칙
+- **분석 로직(analyze.py/verify.py)은 collector SSOT 그대로 — 재구현·수정 금지** (`verify.py`는 라벨 일반화 1줄만 수정됨).
+- 매월 바뀌는 건 입력 raw 뿐. CPO 명단·차원·검증 불변식은 `scripts/charger_report/config.py` + collector `METHODOLOGY.md` 기준.
+- 신규 코드(`build_snapshots.py`)는 **입력 컬럼 파생만** 담당: 완속/급속(chgerType 02·07·08 + output 30kW), `NewbusiNm`(transform.apply_operator_mapping + `NAME_MAP`), `지역명/권역`(zcode 표준표), `Kind/KindDetail`(kind 코드표). 코드표는 collector parquet 대조로 캘리브레이션됨(kind purity 1.000).
+
+### CPO 매칭 (exact-string) — 깨지면 holdings=0
+`analyze.py` 는 `NewbusiNm == cpo`(config.CPO_LISTS) 정확 매칭. AEP 매핑은 `'LG유플러스 볼트업'` 을 쓰므로 `NAME_MAP` 으로 `'LG유플러스'` 로 정규화 필수. 펌프킨·한국전기차충전서비스·엘에스이링크는 busiId 미매핑이라 `bnm` fallback 으로 매칭(현재 정상). 새 월 갱신 후 **모든 CPO holdings 가 0이 아닌지** 확인.
+
+### 시드 (최초 1회, 로컬)
+`build_snapshots.py --seed` → collector `분석/data/{MM월말}.parquet` 4개를 `Feb-26~May-26` 으로 슬림 시드(파생 컬럼 그대로 사용 → 검증된 기존 리포트와 동일 수치 재현). CI엔 xlsx/collector 없으므로 시드는 로컬 전용, 결과 parquet만 커밋.
+
+### 알려진 seam / 주의
+- 시드(월말 기준) ↔ 향후 AEP(월 15일경) 스냅샷 케이던스 혼재 → 최초 증분 1개 구간만 기간이 짧음(일회성). 순증감은 키 차집합이라 날짜 무관하게 견고.
+- 슬림 스냅샷 ~8.5MB×4. prune 으로 N_MONTHS 유지. 작업물(`output/`)은 `.gitignore`.
+- 검증: `python scripts/build_charger_deployment.py --no-ingest` 로 현재 스토어만 재발행(시드 검증용). CI는 `--no-ingest` 없이 최신 raw ingest.

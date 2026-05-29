@@ -16,5 +16,9 @@ data/raw/*.xlsx
 # parquet은 커밋해도 괜찮음 (이력 필요시). 크기 부담되면 아래 줄도 주석 해제:
 # data/raw/*.parquet
 
+# 섹션⑥ 리포트 작업물 (report_data.json·xlsx 중간산출 — 발행본은 data/charger_deployment.json)
+scripts/charger_report/output/
+
 # Logs
 *.log
+.gstack/
