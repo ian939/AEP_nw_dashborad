@@ -407,6 +407,33 @@
     .grid-kpi { grid-template-columns: repeat(2, 1fr); }
     .dual-chart { grid-template-columns: 1fr; }
   }
+
+  /* ===== ⑥ Charger Deployment & Removal ===== */
+  .dep-toggle { display: flex; align-items: center; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+  .dep-toggle-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-right: 4px; }
+  .dep-seg { padding: 8px 22px; font-size: 13px; font-weight: 700; border: 1px solid var(--border); background: #fff; color: var(--text-muted); cursor: pointer; border-radius: 8px; transition: all 0.15s; }
+  .dep-seg:hover { border-color: var(--navy); color: var(--text); }
+  .dep-seg.active { background: var(--navy); border-color: var(--navy); color: #fff; }
+  .dep-seg.active.fast { background: var(--sk-red); border-color: var(--sk-red); }
+  .dep-window { margin-left: auto; font-size: 11.5px; color: var(--text-light); font-style: italic; }
+
+  .cpo-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; margin-bottom: 14px; }
+  .cpo-card .cpo-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+  .cpo-card .cpo-nm { font-size: 14px; font-weight: 800; color: var(--navy); }
+  .cpo-card .cpo-kpi { display: flex; gap: 16px; flex-wrap: wrap; font-size: 11.5px; color: var(--text-muted); }
+  .hl-g { color: var(--success); font-weight: 700; }
+  .hl-r { color: var(--sk-red); font-weight: 700; }
+  .net-pos { color: var(--success); font-weight: 700; }
+  .net-neg { color: var(--sk-red); font-weight: 700; }
+
+  details.dep-box { margin-top: 12px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  details.dep-box > summary { list-style: none; cursor: pointer; padding: 10px 14px; font-size: 12.5px; font-weight: 600; color: var(--text); background: #fafbfc; display: flex; align-items: center; gap: 8px; user-select: none; }
+  details.dep-box > summary::-webkit-details-marker { display: none; }
+  details.dep-box > summary .arr { transition: transform 0.2s; color: var(--text-muted); }
+  details.dep-box[open] > summary .arr { transform: rotate(90deg); }
+  .dep-box-body { padding: 6px 14px 14px; }
+  .st-scroll { max-height: 300px; overflow-y: auto; }
+  .subh { font-size: 11.5px; font-weight: 700; margin: 10px 0 4px; }
 </style>
 </head>
 <body>
@@ -444,6 +471,7 @@
   <button class="tab" data-tab="fast">③ Fast Charger CPO Landscape</button>
   <button class="tab" data-tab="concentration">④ Top 3 Concentration</button>
   <button class="tab" data-tab="share">⑤ Top 3 Market Share</button>
+  <button class="tab" data-tab="deployment">⑥ Charger Deployment & Removal</button>
 </nav>
 
 <main>
@@ -698,6 +726,84 @@
         <div class="card-body"><div class="chart-wrap" style="height:260px"><canvas id="chartMSDelta"></canvas></div></div>
       </div>
     </div>
+  </section>
+
+  <!-- TAB 6: CHARGER DEPLOYMENT & REMOVAL -->
+  <section class="tab-panel" id="tab-deployment">
+    <div class="dep-toggle">
+      <span class="dep-toggle-label">충전 속도</span>
+      <button class="dep-seg active" data-speed="완속">완속 (Slow)</button>
+      <button class="dep-seg" data-speed="급속">급속 (Fast)</button>
+      <span class="dep-window" id="depWindow"></span>
+    </div>
+
+    <div class="callout" style="margin-bottom:20px">
+      <ul>
+        <li><strong>신규/철거 정의</strong> · 월 스냅샷의 충전기 고유키(<code>statId|chgerId</code>) 차집합. 다음 달 새로 등장=신규, 사라짐=철거, 순증감=신규−철거.</li>
+        <li><strong>완속/급속 분리</strong> · 각 속도 부분집합에서 독립 산정. 타입 전환(완속↔급속) 때문에 <strong>완속신규+급속신규 ≥ 전체신규</strong>일 수 있으나 <strong>속도별 순증 합 = 전체 순증</strong>은 항상 성립.</li>
+        <li><strong>상면(충전소)</strong> · <code>statId</code> 단위. 주요 CPO는 신규/철거 상면명까지 드릴다운.</li>
+        <li><strong>데이터</strong> · 환경부 전기차충전소 OpenAPI 월 스냅샷. AEP 월간 워크플로에서 자동 갱신.</li>
+      </ul>
+    </div>
+
+    <!-- ② 전체 추이 -->
+    <div class="section-divider"><div class="eyebrow">Overall Trend</div><h3>전체 신규·철거 추이</h3><p>구간별 충전기 신규·철거·순증감 및 월별 보유 규모</p></div>
+    <div class="grid-kpi" id="depKpi"></div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header"><h3>충전기 신규·철거 (구간별)</h3><span class="tag dep-speed-tag">완속</span></div>
+        <div class="card-body"><div class="chart-wrap" style="height:300px"><canvas id="depTrendChart"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>구간별 요약 (충전기 / 상면)</h3><span class="tag">Summary</span></div>
+        <div class="card-body" id="depTrendTable"></div>
+      </div>
+    </div>
+
+    <!-- ③ 사업자별 -->
+    <div class="section-divider"><div class="eyebrow">By Operator</div><h3>사업자별 신규·철거</h3><p>전 구간 합산 · 순증감 내림차순</p></div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header"><h3>사업자 TOP 12</h3><span class="tag dep-speed-tag">완속</span></div>
+        <div class="card-body"><div class="chart-wrap" style="height:430px"><canvas id="depOpChart"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>사업자 상세 (TOP 20)</h3><span class="tag">Detail</span></div>
+        <div class="card-body" id="depOpTable" style="max-height:470px;overflow-y:auto"></div>
+      </div>
+    </div>
+
+    <!-- ④ 카테고리별 -->
+    <div class="section-divider"><div class="eyebrow">By Category</div><h3>카테고리별 신규·철거</h3><p>설치 장소 대분류 기준</p></div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header"><h3>카테고리</h3><span class="tag dep-speed-tag">완속</span></div>
+        <div class="card-body"><div class="chart-wrap" style="height:340px"><canvas id="depKindChart"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>카테고리 상세</h3><span class="tag">Detail</span></div>
+        <div class="card-body" id="depKindTable"></div>
+      </div>
+    </div>
+
+    <!-- ⑤ 지역별 -->
+    <div class="section-divider"><div class="eyebrow">By Region</div><h3>지역별 신규·철거</h3><p>권역(수도권/5대광역시/지방) · 시도 단위</p></div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header"><h3>시도별</h3><span class="tag dep-speed-tag">완속</span></div>
+        <div class="card-body"><div class="chart-wrap" style="height:430px"><canvas id="depRegionChart"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>권역별 / 시도별 상세</h3><span class="tag">Detail</span></div>
+        <div class="card-body"><div id="depZoneTable"></div><div style="height:14px"></div><div id="depRegionTable" style="max-height:300px;overflow-y:auto"></div></div>
+      </div>
+    </div>
+
+    <!-- ⑥ 주요 CPO -->
+    <div class="section-divider"><div class="eyebrow">Major CPO</div><h3>주요 CPO 분석</h3><p>CPO별 신규·철거 추이 · 보유량 · 신규/철거 상면 드릴다운</p></div>
+    <div id="depCpoContainer"></div>
+
+    <div class="source">Source: 환경부 전기차 충전소 OpenAPI(getChargerInfo) 월 스냅샷 비교 · <code>statId|chgerId</code> 키 차집합 기준 신규/철거(완속·급속 분리) · 독립 재계산 교차검증(verify) 통과분만 발행 · 매월 자동 갱신.</div>
   </section>
 
 </main>
@@ -1566,9 +1672,168 @@ function renderEvMarket(ev) {
 }
 
 // ============================================================================
+// ⑥ CHARGER DEPLOYMENT & REMOVAL
+// ============================================================================
+let DEPLOY_DATA = null;
+let depCharts = [];
+const depDestroy = () => { depCharts.forEach(c => { try { c.destroy(); } catch (e) {} }); depCharts = []; };
+const depFmt = v => (v == null ? '—' : Number(v).toLocaleString());
+const depSigned = v => (v > 0 ? '+' : '') + Number(v).toLocaleString();
+const depShortSeg = s => String(s).replace(/-\d{2}/g, '');           // 'Feb-26→Mar-26' → 'Feb→Mar'
+const depNetCls = v => v >= 0 ? 'net-pos' : 'net-neg';
+
+// 전 구간 합산 → [{label,신규,철거,순증감}] (순증감 내림차순)
+function depTotals(dimObj) {
+  const acc = {};
+  Object.values(dimObj || {}).forEach(rows => rows.forEach(r => {
+    const k = r.label == null ? '(미상)' : r.label;
+    if (!acc[k]) acc[k] = [0, 0];
+    acc[k][0] += r['신규']; acc[k][1] += r['철거'];
+  }));
+  return Object.entries(acc).map(([label, [n, rm]]) => ({ label, 신규: n, 철거: rm, 순증감: n - rm }))
+    .sort((a, b) => b.순증감 - a.순증감);
+}
+
+function depBar(canvasId, labels, newArr, rmArr, horizontal) {
+  const ctx = document.getElementById(canvasId); if (!ctx) return;
+  depCharts.push(new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets: [
+      { label: '신규', data: newArr, backgroundColor: '#059669', borderRadius: 3 },
+      { label: '철거', data: rmArr, backgroundColor: '#e4002b', borderRadius: 3 },
+    ] },
+    options: {
+      maintainAspectRatio: false, indexAxis: horizontal ? 'y' : 'x',
+      plugins: { legend: { position: 'top', align: 'start' }, datalabels: { display: false } },
+      scales: {
+        x: { beginAtZero: true, grid: { color: '#f0f2f7' }, ticks: { font: { size: 10 } } },
+        y: { beginAtZero: true, grid: { display: !horizontal, color: '#f0f2f7' }, ticks: { font: { size: 10 } } },
+      },
+    },
+  }));
+}
+
+function depCpoChart(canvasId, trend, holdings, trans) {
+  const ctx = document.getElementById(canvasId); if (!ctx) return;
+  depCharts.push(new Chart(ctx, {
+    data: {
+      labels: trans.map(depShortSeg),
+      datasets: [
+        { type: 'bar', label: '신규', data: trend.map(t => t['신규']), backgroundColor: '#059669', borderRadius: 3, yAxisID: 'y', order: 2 },
+        { type: 'bar', label: '철거', data: trend.map(t => t['철거']), backgroundColor: '#e4002b', borderRadius: 3, yAxisID: 'y', order: 2 },
+        { type: 'line', label: '보유량', data: holdings.slice(1), borderColor: '#1a2b5c', backgroundColor: '#1a2b5c', borderWidth: 2.5, tension: 0.3, pointRadius: 4, pointBackgroundColor: '#fff', pointBorderWidth: 2, yAxisID: 'y1', order: 1 },
+      ],
+    },
+    options: {
+      maintainAspectRatio: false,
+      plugins: { legend: { position: 'top', align: 'start' }, datalabels: { display: false } },
+      scales: {
+        y: { beginAtZero: true, position: 'left', grid: { color: '#f0f2f7' }, title: { display: true, text: '신규/철거' } },
+        y1: { position: 'right', grid: { display: false }, title: { display: true, text: '보유량' } },
+        x: { grid: { display: false } },
+      },
+    },
+  }));
+}
+
+function depSummaryTableHtml(rows, kindLabel) {
+  const tot = rows.reduce((a, r) => ({ 신규: a.신규 + r['신규'], 철거: a.철거 + r['철거'], 순증감: a.순증감 + r['순증감'] }), { 신규: 0, 철거: 0, 순증감: 0 });
+  const body = rows.map(r => `<tr><td>${depShortSeg(r['구간'])}</td><td class="right hl-g">${depFmt(r['신규'])}</td><td class="right hl-r">${depFmt(r['철거'])}</td><td class="right ${depNetCls(r['순증감'])}">${depSigned(r['순증감'])}</td></tr>`).join('');
+  return `<table class="tbl"><thead><tr><th>구간 · ${kindLabel}</th><th class="right">신규</th><th class="right">철거</th><th class="right">순증감</th></tr></thead><tbody>${body}<tr class="total-row"><td>합계</td><td class="right">${depFmt(tot.신규)}</td><td class="right">${depFmt(tot.철거)}</td><td class="right">${depSigned(tot.순증감)}</td></tr></tbody></table>`;
+}
+
+function depDimTableHtml(rows, topN) {
+  const ranks = ['gold', 'silver', 'bronze'];
+  const body = rows.slice(0, topN).map((x, i) => `<tr><td><span class="rank ${ranks[i] || ''}">${i + 1}</span></td><td class="co-name">${x.label}</td><td class="right hl-g">${depFmt(x['신규'])}</td><td class="right hl-r">${depFmt(x['철거'])}</td><td class="right ${depNetCls(x['순증감'])}">${depSigned(x['순증감'])}</td></tr>`).join('');
+  return `<table class="tbl"><thead><tr><th style="width:30px">#</th><th>구분</th><th class="right">신규</th><th class="right">철거</th><th class="right">순증감</th></tr></thead><tbody>${body}</tbody></table>`;
+}
+
+function depStationTableHtml(stations) {
+  if (!stations || !stations.length) return '<p style="font-size:11.5px;color:var(--text-light);padding:4px 0">해당 없음</p>';
+  const body = stations.map(s => `<tr><td>${depShortSeg(s['구간'])}</td><td>${s.statNm || ''}</td><td style="color:var(--text-muted)">${s.addr || ''}</td><td class="right">${depFmt(s['충전기수'])}</td></tr>`).join('');
+  return `<div class="st-scroll"><table class="tbl"><thead><tr><th style="width:74px">구간</th><th>상면명</th><th>주소</th><th class="right">충전기수</th></tr></thead><tbody>${body}</tbody></table></div>`;
+}
+
+function renderDeployment(speed) {
+  if (!DEPLOY_DATA) return;
+  depDestroy();
+  const S = DEPLOY_DATA.by_speed[speed];
+  const LABELS = DEPLOY_DATA.labels, TRANS = DEPLOY_DATA.transitions;
+
+  document.querySelectorAll('.dep-seg').forEach(b => {
+    b.classList.toggle('active', b.dataset.speed === speed);
+    b.classList.toggle('fast', b.dataset.speed === '급속');
+  });
+  document.querySelectorAll('.dep-speed-tag').forEach(t => { t.textContent = speed; t.classList.toggle('fast', speed === '급속'); });
+  const win = document.getElementById('depWindow');
+  if (win) win.textContent = `${LABELS[0]} ~ ${LABELS[LABELS.length - 1]} · ${TRANS.length}개 전환구간`;
+
+  document.getElementById('depKpi').innerHTML = LABELS.map(lb => {
+    const t = S.totals_by_label[lb];
+    return `<div class="kpi"><div class="label">${lb}</div><div class="value">${depFmt(t['충전기'])}</div><div class="delta">상면 ${depFmt(t['상면'])}개</div></div>`;
+  }).join('');
+
+  depBar('depTrendChart', TRANS.map(depShortSeg), S.summary_charger.map(r => r['신규']), S.summary_charger.map(r => r['철거']), false);
+  document.getElementById('depTrendTable').innerHTML = depSummaryTableHtml(S.summary_charger, '충전기') + '<div style="height:12px"></div>' + depSummaryTableHtml(S.summary_station, '상면');
+
+  const ops = depTotals(S.dims['사업자']);
+  depBar('depOpChart', ops.slice(0, 12).map(r => r.label), ops.slice(0, 12).map(r => r['신규']), ops.slice(0, 12).map(r => r['철거']), true);
+  document.getElementById('depOpTable').innerHTML = depDimTableHtml(ops, 20);
+
+  const kinds = depTotals(S.dims['카테고리']);
+  depBar('depKindChart', kinds.map(r => r.label), kinds.map(r => r['신규']), kinds.map(r => r['철거']), true);
+  document.getElementById('depKindTable').innerHTML = depDimTableHtml(kinds, kinds.length);
+
+  const regions = depTotals(S.dims['지역']);
+  depBar('depRegionChart', regions.map(r => r.label), regions.map(r => r['신규']), regions.map(r => r['철거']), true);
+  document.getElementById('depZoneTable').innerHTML = depDimTableHtml(depTotals(S.dims['권역']), 99);
+  document.getElementById('depRegionTable').innerHTML = depDimTableHtml(regions, regions.length);
+
+  document.getElementById('depCpoContainer').innerHTML = S.cpo.list.map((cpo, i) => {
+    const c = S.cpo.data[cpo];
+    const start = c.holdings[0], end = c.holdings[c.holdings.length - 1];
+    const net = c.trend.reduce((a, t) => a + t['순증감'], 0);
+    return `<div class="cpo-card">
+      <div class="cpo-head">
+        <span class="cpo-nm">${cpo}</span>
+        <div class="cpo-kpi">
+          <span>${LABELS[0]} <b>${depFmt(start)}</b> → ${LABELS[LABELS.length - 1]} <b>${depFmt(end)}</b></span>
+          <span>충전기 순증 <b class="${depNetCls(net)}">${depSigned(net)}</b></span>
+          <span>상면 신규 <b class="hl-g">${depFmt(c.new_stations.length)}</b> / 철거 <b class="hl-r">${depFmt(c.removed_stations.length)}</b></span>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:220px"><canvas id="depCpoChart${i}"></canvas></div>
+      <details class="dep-box">
+        <summary><span class="arr">▸</span>신규·철거 상면(충전소) 상세 — 상면명 보기</summary>
+        <div class="dep-box-body">
+          <div class="subh hl-g">신규 상면 (${depFmt(c.new_stations.length)})</div>${depStationTableHtml(c.new_stations)}
+          <div class="subh hl-r" style="margin-top:14px">철거 상면 (${depFmt(c.removed_stations.length)})</div>${depStationTableHtml(c.removed_stations)}
+        </div>
+      </details>
+    </div>`;
+  }).join('');
+  S.cpo.list.forEach((cpo, i) => { const c = S.cpo.data[cpo]; depCpoChart('depCpoChart' + i, c.trend, c.holdings, TRANS); });
+}
+
+async function loadDeployment() {
+  try {
+    const r = await fetch('./data/charger_deployment.json', { cache: 'no-store' });
+    if (!r.ok) throw new Error('not found');
+    DEPLOY_DATA = await r.json();
+    renderDeployment('완속');
+    document.querySelectorAll('.dep-seg').forEach(b => b.addEventListener('click', () => renderDeployment(b.dataset.speed)));
+  } catch (e) {
+    console.warn('charger_deployment.json 로드 실패 → 탭 ⑥ 숨김', e);
+    const btn = document.querySelector('.tab[data-tab="deployment"]'); if (btn) btn.style.display = 'none';
+    const panel = document.getElementById('tab-deployment'); if (panel) panel.remove();
+  }
+}
+
+// ============================================================================
 // BOOT
 // ============================================================================
 (async () => {
+  loadDeployment();
   try {
     const data = await loadDashboardData();
     render(data);
