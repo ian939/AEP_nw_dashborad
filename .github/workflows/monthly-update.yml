@@ -45,11 +45,25 @@ jobs:
       - name: Build charger deployment report (섹션⑥)
         run: python scripts/build_charger_deployment.py
 
+      - name: Setup Node.js (EV Sales Dashboard)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # 다나와 판매실적(전월) 수집. 외부 API키 불필요. 다나와가 CI IP를 막아도
+      # 워크플로가 실패하지 않도록 non-blocking — 실패 시 기존 ev_master.csv 로 재빌드.
+      - name: Collect Danawa EV model sales (전월)
+        continue-on-error: true
+        run: node ev_sales/scripts/collect_models.mjs
+
+      - name: Build EV Sales Dashboard
+        run: node ev_sales/scripts/build_sk_dashboard.mjs
+
       - name: Commit and push changes
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add data/
+          git add data/ ev_sales/data/ev_master.csv "EV Sales Dashboard.html"
           if git diff --cached --quiet; then
             echo "No changes to commit"
           else

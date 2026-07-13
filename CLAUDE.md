@@ -205,3 +205,32 @@ AEP Dashboard 탭 ⑥. 월 스냅샷 비교로 충전기 신규/철거를 완속
 - 시드(월말 기준) ↔ 향후 AEP(월 15일경) 스냅샷 케이던스 혼재 → 최초 증분 1개 구간만 기간이 짧음(일회성). 순증감은 키 차집합이라 날짜 무관하게 견고.
 - 슬림 스냅샷 ~8.5MB×4. prune 으로 N_MONTHS 유지. 작업물(`output/`)은 `.gitignore`.
 - 검증: `python scripts/build_charger_deployment.py --no-ingest` 로 현재 스토어만 재발행(시드 검증용). CI는 `--no-ingest` 없이 최신 raw ingest.
+
+---
+
+## 12. EV Sales Dashboard (모델별 판매 · Node 파이프라인)
+
+`EV Sales Dashboard.html` (허브 카드 = 수동 톤이지만 실제로는 **월간 워크플로에서 자동 갱신**). 다나와 판매실적
+기반 국내 EV 모델별 판매. Python 파이프라인과 별개인 **Node(ESM, 외부 의존성 0)** 파이프라인이 `repo/ev_sales/` 에 있다.
+
+### 데이터 흐름 (monthly-update.yml, Python 스텝 뒤)
+1. `Setup Node.js` → node 20.
+2. `node ev_sales/scripts/collect_models.mjs` — 다나와(auto.danawa.com)에서 **전월** 모델 판매 스크래핑
+   → `ev_sales/data/ev_master.csv`(dim=model) 멱등 upsert. **API키 불필요**(HTML 파싱). `continue-on-error: true`
+   — 다나와가 CI IP를 막아도 워크플로가 죽지 않고 기존 CSV로 재빌드.
+3. `node ev_sales/scripts/build_sk_dashboard.mjs` — CSV → self-contained `EV Sales Dashboard.html`(CDN Chart.js).
+   출력 위치는 `findRepoRoot()`(index.html 상위 탐색)로 repo 루트에 씀.
+4. 커밋 스텝의 `git add` 에 `ev_sales/data/ev_master.csv "EV Sales Dashboard.html"` 포함.
+
+### SSOT / drift 규칙 (중요)
+- **`repo/ev_sales/` 가 CI 프로덕션 복사본.** 프로젝트 밖 `1. EV판매 트랙커/` 는 로컬/개발 원본(다크 대시보드,
+  KOTSA secret, scan_ev 등)이며 두 곳의 스크립트(`lib.mjs`/`dashboard_data.mjs`/`build_sk_dashboard.mjs`/
+  `collect_models.mjs`)는 **byte-identical**. 데이터 계산은 `dashboard_data.mjs` 단일 함수.
+- **화이트리스트(`config/ev_models.json`) 편집은 `repo/ev_sales/config/` 가 CI 기준.** 신차 추가 시 이 파일을 갱신
+  (로컬 트래커에서 `scan_ev.mjs` 로 후보만 찾고, 결과는 repo 복사본에 반영).
+- 다나와 원본 스냅샷 `ev_sales/data/raw/*.json` 은 `.gitignore`(대시보드는 CSV로 재현 가능).
+
+### 연료·지역·비중 (현재 placeholder)
+KOTSA 신규등록 API 장애로 연료·지역·공식총계 축은 비어 "API 수집 후 표시" placeholder. API 회복 시
+`dashboard_data.mjs` 의 `hasFuel`/`hasRegion`/`hasApiTotal` 플래그가 자동으로 차트를 켠다(로컬 트래커의
+`collect.mjs` 로 채워야 함 — CI엔 미포함).
