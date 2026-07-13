@@ -1,0 +1,3 @@
+# 다나와 원본 스냅샷은 CI 산출물 — 커밋 안 함 (대시보드는 ev_master.csv 로 재현)
+*.json
+!.gitkeep
