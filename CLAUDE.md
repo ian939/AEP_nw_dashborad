@@ -213,14 +213,20 @@ AEP Dashboard 탭 ⑥. 월 스냅샷 비교로 충전기 신규/철거를 완속
 `EV Sales Dashboard.html` (허브 카드 = 수동 톤이지만 실제로는 **월간 워크플로에서 자동 갱신**). 다나와 판매실적
 기반 국내 EV 모델별 판매. Python 파이프라인과 별개인 **Node(ESM, 외부 의존성 0)** 파이프라인이 `repo/ev_sales/` 에 있다.
 
-### 데이터 흐름 (monthly-update.yml, Python 스텝 뒤)
+### 워크플로 구조 (monthly-update.yml — 2개 독립 job)
+`update-aep`(Python)와 `update-ev-sales`(Node)로 **분리**돼 있다. EV job 은 `needs: update-aep` +
+`if: always()` → **환경부 수집(AEP)이 실패해도 EV 대시보드는 항상 갱신**된다. 두 job 모두 main 에 push 하므로
+**순차 실행 + 워크플로 레벨 `concurrency: monthly-update`(동시 실행 큐잉)** + EV push 전 `git pull --rebase` 로
+push 경쟁을 막는다. 각 job 은 자기 산출물만 커밋한다(AEP=`git add data/`, EV=`ev_sales/data/ev_master.csv` +
+`"EV Sales Dashboard.html"`).
+
+### EV job 데이터 흐름
 1. `Setup Node.js` → node 20.
 2. `node ev_sales/scripts/collect_models.mjs` — 다나와(auto.danawa.com)에서 **전월** 모델 판매 스크래핑
    → `ev_sales/data/ev_master.csv`(dim=model) 멱등 upsert. **API키 불필요**(HTML 파싱). `continue-on-error: true`
-   — 다나와가 CI IP를 막아도 워크플로가 죽지 않고 기존 CSV로 재빌드.
+   — 다나와가 CI IP를 막아도 job 이 죽지 않고 기존 CSV로 재빌드.
 3. `node ev_sales/scripts/build_sk_dashboard.mjs` — CSV → self-contained `EV Sales Dashboard.html`(CDN Chart.js).
    출력 위치는 `findRepoRoot()`(index.html 상위 탐색)로 repo 루트에 씀.
-4. 커밋 스텝의 `git add` 에 `ev_sales/data/ev_master.csv "EV Sales Dashboard.html"` 포함.
 
 ### SSOT / drift 규칙 (중요)
 - **`repo/ev_sales/` 가 CI 프로덕션 복사본.** 프로젝트 밖 `1. EV판매 트랙커/` 는 로컬/개발 원본(다크 대시보드,

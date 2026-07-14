@@ -6,8 +6,14 @@ on:
     - cron: '0 18 14 * *'
   workflow_dispatch:  # 수동 실행 가능
 
+# 같은 워크플로의 동시 실행을 막아 main push 경쟁을 방지 (큐잉, 취소 안 함)
+concurrency:
+  group: monthly-update
+  cancel-in-progress: false
+
 jobs:
-  update-dashboard:
+  # ── AEP (환경부 충전기/등록 · Python 파이프라인) ──────────────────────────
+  update-aep:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -45,7 +51,34 @@ jobs:
       - name: Build charger deployment report (섹션⑥)
         run: python scripts/build_charger_deployment.py
 
-      - name: Setup Node.js (EV Sales Dashboard)
+      - name: Commit and push (AEP data)
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add data/
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            MONTH=$(date -u -d '1 hour' +'%Y-%m')
+            git commit -m "chore: monthly AEP data update ($MONTH)"
+            git push
+          fi
+
+  # ── EV Sales (다나와 모델별 판매 · Node 파이프라인) ───────────────────────
+  # AEP job 과 독립: 환경부 수집이 실패해도 항상 실행(if: always()).
+  # AEP 뒤에 순차 실행 + push 전 rebase 로 main push 경쟁을 피한다.
+  update-ev-sales:
+    needs: update-aep
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -59,15 +92,17 @@ jobs:
       - name: Build EV Sales Dashboard
         run: node ev_sales/scripts/build_sk_dashboard.mjs
 
-      - name: Commit and push changes
+      - name: Commit and push (EV Sales Dashboard)
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add data/ ev_sales/data/ev_master.csv "EV Sales Dashboard.html"
+          git add ev_sales/data/ev_master.csv "EV Sales Dashboard.html"
           if git diff --cached --quiet; then
             echo "No changes to commit"
           else
             MONTH=$(date -u -d '1 hour' +'%Y-%m')
-            git commit -m "chore: monthly data update ($MONTH)"
+            git commit -m "chore: EV sales dashboard update ($MONTH)"
+            # AEP job 이 방금 push 했을 수 있으니 rebase 후 push
+            git pull --rebase origin main
             git push
           fi
