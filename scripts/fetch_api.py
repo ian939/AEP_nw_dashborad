@@ -16,6 +16,7 @@ import os
 import sys
 import time
 import json
+import random
 from pathlib import Path
 from datetime import datetime
 from xml.etree import ElementTree as ET
@@ -29,10 +30,11 @@ if not API_KEY:
     print("GitHub Actions → Secrets 에 MOE_API_KEY 를 등록하세요.")
     sys.exit(1)
 
-API_URL = "http://apis.data.go.kr/B552584/EvCharger/getChargerInfo"
+# data.go.kr 게이트웨이가 502/timeout 을 간헐 발생시켜, https + 넉넉한 재시도로 blip 을 견딘다.
+API_URL = "https://apis.data.go.kr/B552584/EvCharger/getChargerInfo"
 PAGE_SIZE = 9999  # API 최대값
 MAX_PAGES = 100   # 안전 장치 (~99만건까지)
-RETRY = 3
+RETRY = 6         # 게이트웨이 일시 장애(502/timeout)를 견디기 위해 넉넉히
 TIMEOUT = 60
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -70,8 +72,12 @@ def fetch_page(page_no: int) -> tuple[list[dict], int]:
             return rows, total
         except Exception as e:
             last_err = e
-            wait = 2 ** attempt
-            print(f"  [page {page_no}] attempt {attempt+1}/{RETRY} failed: {e}. retry in {wait}s")
+            if attempt == RETRY - 1:
+                print(f"  [page {page_no}] attempt {attempt+1}/{RETRY} failed: {e}. (마지막 시도)")
+                break
+            # 지수 백오프(최대 30s) + 지터 — 게이트웨이 blip 을 넉넉히 넘긴다.
+            wait = min(30, 2 ** attempt) + random.uniform(0, 2)
+            print(f"  [page {page_no}] attempt {attempt+1}/{RETRY} failed: {e}. retry in {wait:.1f}s")
             time.sleep(wait)
     raise RuntimeError(f"page {page_no} failed after {RETRY} retries: {last_err}")
 
