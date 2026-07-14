@@ -61,6 +61,8 @@ jobs:
           else
             MONTH=$(date -u -d '1 hour' +'%Y-%m')
             git commit -m "chore: monthly AEP data update ($MONTH)"
+            # 30분 수집 도중 main 이 앞서갔을 수 있으니 rebase 후 push
+            git pull --rebase origin main
             git push
           fi
 
