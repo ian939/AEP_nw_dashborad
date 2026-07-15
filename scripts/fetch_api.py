@@ -98,6 +98,9 @@ def main():
     print(f"  누적 {len(all_rows):,} / {total_expected:,}")
 
     n_pages = min(MAX_PAGES, (total_expected + PAGE_SIZE - 1) // PAGE_SIZE)
+    # 허용 최대 건너뜀 = 완료율 하한을 만족하는 한도. 초과하면 어차피 발행 불가이므로
+    # 남은 페이지를 계속 갈지 말고 즉시 실패(백엔드 전면 장애 시 몇 시간 grinding 방지).
+    max_skips = int((1 - MIN_COMPLETENESS) * n_pages)
     skipped = []
     for page in range(2, n_pages + 1):
         print(f"페이지 {page}/{n_pages} 수집 중...")
@@ -107,6 +110,9 @@ def main():
             # 한 페이지가 재시도를 소진해도 전체를 죽이지 않고 건너뛴다(부분 실패 허용).
             skipped.append(page)
             print(f"  [page {page}] 최종 실패 → 건너뜀: {e}")
+            if len(skipped) > max_skips:
+                print(f"  건너뛴 페이지 {len(skipped)} > 허용 {max_skips} → 백엔드 장애로 조기 중단(빠른 실패)")
+                break
             continue
         if not rows:
             print(f"페이지 {page} 빈 응답 → 종료")
