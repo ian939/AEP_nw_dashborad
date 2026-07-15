@@ -5,6 +5,10 @@ on:
     # 매월 15일 KST 03:00 (UTC 18:00 of the 14th)
     - cron: '0 18 14 * *'
   workflow_dispatch:  # 수동 실행 가능
+    inputs:
+      skip_ev:
+        description: 'EV Sales job 건너뛰기 (환경부 장애 시 AEP만 재시도할 때 true)'
+        default: 'false'
 
 # 같은 워크플로의 동시 실행을 막아 main push 경쟁을 방지 (큐잉, 취소 안 함)
 concurrency:
@@ -71,7 +75,8 @@ jobs:
   # AEP 뒤에 순차 실행 + push 전 rebase 로 main push 경쟁을 피한다.
   update-ev-sales:
     needs: update-aep
-    if: ${{ always() }}
+    # AEP 실패와 독립(always). 단 skip_ev=true 재시도(AEP 전용)일 땐 건너뜀.
+    if: ${{ always() && github.event.inputs.skip_ev != 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
