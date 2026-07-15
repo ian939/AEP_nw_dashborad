@@ -240,3 +240,25 @@ push 경쟁을 막는다. 각 job 은 자기 산출물만 커밋한다(AEP=`git 
 KOTSA 신규등록 API 장애로 연료·지역·공식총계 축은 비어 "API 수집 후 표시" placeholder. API 회복 시
 `dashboard_data.mjs` 의 `hasFuel`/`hasRegion`/`hasApiTotal` 플래그가 자동으로 차트를 켠다(로컬 트래커의
 `collect.mjs` 로 채워야 함 — CI엔 미포함).
+
+---
+
+## 13. AEP job — 충전기(환경부) · 차량(KOTSA) 독립 수집
+
+`update-aep` 안의 두 수집 소스는 **서로 다른 제공처**이고 이제 **독립적으로 실패**한다.
+- 충전기: 환경부/한국환경공단 `B552584` (`fetch_api.py`)
+- 차량(EV 신규등록): 한국교통안전공단(KOTSA) `B553881` (`fetch_ev_registration.py`)
+
+과거엔 한 job 에 순차로 묶여 앞 스텝(충전기)이 죽으면 뒤(차량·빌드)가 전부 skip 됐다
+(예: 2026-05 차량 데이터는 수집됐으나 충전기 실패로 대시보드에 반영 안 됨). 이를 분리:
+- 두 fetch 스텝 모두 `continue-on-error: true` + `id`(charger/vehicle).
+- `transform` / `build_charger_deployment` → **충전기 성공 시에만** (실패 시 돌리면 지난달 raw 를
+  이번 달로 잘못 라벨링해 오염).
+- `build_dashboard_data` / commit → **하나라도 성공하면** 실행. `build_dashboard_data` 는 raw 불필요
+  (`monthly/` + `ev_registration/` 만 사용), `append_ev_sales_from_registrations()` 가 차량분만 갱신.
+- 마지막 "수집 실패 표시" 스텝이 한 소스라도 실패 시 `exit 1` → **job 은 빨간불이지만 성공한 소스 데이터는 이미 커밋됨**.
+
+### 운영 시 주의
+- job 이 실패(red)여도 **차량분은 커밋됐을 수 있다.** 로그의 `charger=.. / vehicle=..` 로 어느 쪽이
+  실패했는지 확인. 실패 소스는 해당 백엔드 회복 후 재실행하면 반영된다.
+- 충전기 데이터는 실패한 달엔 지난달 값이 유지된다(차트에 새 충전기 월이 안 붙음). 정상 동작.

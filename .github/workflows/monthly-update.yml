@@ -36,26 +36,40 @@ jobs:
         run: |
           pip install -r requirements.txt
 
-      - name: Fetch data from 환경부 API
+      # 충전기(환경부)·차량(KOTSA)은 서로 독립 소스 → 각각 continue-on-error 로 분리.
+      # 한쪽 API 장애가 다른 쪽 수집·빌드를 막지 않게 한다(과거엔 앞 스텝 실패 시 전부 skip 됐음).
+      - name: Fetch data from 환경부 API (충전기)
+        id: charger
+        continue-on-error: true
         env:
           MOE_API_KEY: ${{ secrets.MOE_API_KEY }}
         run: python scripts/fetch_api.py
 
-      - name: Fetch EV registration data
+      - name: Fetch EV registration data (차량 · KOTSA)
+        id: vehicle
+        continue-on-error: true
         env:
           EV_REG_API_KEY: ${{ secrets.EV_REG_API_KEY }}
         run: python scripts/fetch_ev_registration.py
 
-      - name: Transform raw → monthly snapshot
+      # transform 은 충전기 raw 를 월 스냅샷으로 변환 — 충전기 성공 시에만.
+      # (실패 시 돌리면 지난달 raw 를 이번 달로 잘못 라벨링해 오염됨)
+      - name: Transform raw → monthly snapshot (충전기 성공 시)
+        if: steps.charger.outcome == 'success'
         run: python scripts/transform.py
 
-      - name: Build dashboard data
+      # build_dashboard_data 는 raw 불필요(monthly/ + ev_registration/ 만 사용).
+      # 차량만 성공해도 ev_sales 를 갱신하므로 하나라도 성공하면 실행.
+      - name: Build dashboard data (충전기·차량 중 하나라도 성공 시)
+        if: steps.charger.outcome == 'success' || steps.vehicle.outcome == 'success'
         run: python scripts/build_dashboard_data.py
 
-      - name: Build charger deployment report (섹션⑥)
+      - name: Build charger deployment report (섹션⑥ — 충전기 성공 시)
+        if: steps.charger.outcome == 'success'
         run: python scripts/build_charger_deployment.py
 
       - name: Commit and push (AEP data)
+        if: steps.charger.outcome == 'success' || steps.vehicle.outcome == 'success'
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
@@ -69,6 +83,14 @@ jobs:
             git pull --rebase origin main
             git push
           fi
+
+      # 성공분은 위에서 이미 커밋됨. 한 소스라도 실패했으면 job 을 빨간불로 표시(가시성).
+      - name: 수집 실패 표시 (성공분은 이미 커밋됨)
+        if: steps.charger.outcome != 'success' || steps.vehicle.outcome != 'success'
+        run: |
+          echo "charger=${{ steps.charger.outcome }} / vehicle=${{ steps.vehicle.outcome }}"
+          echo "::error::일부 소스 수집 실패 (charger=${{ steps.charger.outcome }}, vehicle=${{ steps.vehicle.outcome }}). 성공한 소스만 갱신·커밋됨. 실패 소스는 백엔드 회복 후 재실행하세요."
+          exit 1
 
   # ── EV Sales (다나와 모델별 판매 · Node 파이프라인) ───────────────────────
   # AEP job 과 독립: 환경부 수집이 실패해도 항상 실행(if: always()).
