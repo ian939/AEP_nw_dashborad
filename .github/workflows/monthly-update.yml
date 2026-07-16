@@ -38,12 +38,13 @@ jobs:
 
       # 충전기(환경부)·차량(KOTSA)은 서로 독립 소스 → 각각 continue-on-error 로 분리.
       # 한쪽 API 장애가 다른 쪽 수집·빌드를 막지 않게 한다(과거엔 앞 스텝 실패 시 전부 skip 됐음).
-      - name: Fetch data from 환경부 API (충전기)
+      # 직접 환경부 API(fetch_api.py)는 게이트웨이 장기 장애로 미사용.
+      # 같은 환경부 데이터를 매일 수집하는 collector 레포의 latest_data.csv.gz 를 받아
+      # raw_YYYYMMDD.parquet 로 변환한다(하위 파이프라인 무수정).
+      - name: Fetch charger snapshot (collector CSV)
         id: charger
         continue-on-error: true
-        env:
-          MOE_API_KEY: ${{ secrets.MOE_API_KEY }}
-        run: python scripts/fetch_api.py
+        run: python scripts/fetch_charger_from_collector.py
 
       - name: Fetch EV registration data (차량 · KOTSA)
         id: vehicle

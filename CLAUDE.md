@@ -262,3 +262,28 @@ KOTSA 신규등록 API 장애로 연료·지역·공식총계 축은 비어 "API
 - job 이 실패(red)여도 **차량분은 커밋됐을 수 있다.** 로그의 `charger=.. / vehicle=..` 로 어느 쪽이
   실패했는지 확인. 실패 소스는 해당 백엔드 회복 후 재실행하면 반영된다.
 - 충전기 데이터는 실패한 달엔 지난달 값이 유지된다(차트에 새 충전기 월이 안 붙음). 정상 동작.
+
+---
+
+## 14. 충전기 raw 소스 = collector CSV (직접 환경부 API 대체)
+
+직접 환경부 API(`fetch_api.py`, data.go.kr `B552584`)가 게이트웨이 장기 장애로 반복 실패해,
+충전기 raw 획득을 **collector 레포 `ian939/ev-charger-collector` 의 `latest_data.csv.gz`** 로 전환했다.
+
+- `scripts/fetch_charger_from_collector.py` 가 gz(≈15MB, 전국 ~489k행, 매일 01:00 UTC 갱신)를 받아
+  `data/raw/raw_YYYYMMDD.parquet` 로 변환. 이후 `transform.py`/`build_snapshots.py`/`build_dashboard_data.py`
+  는 **무수정** 동작(기존 raw parquet 규칙 그대로).
+- **`dtype=str` 필수**: chgerType `"06"`, zcode `"11"`, kind 코드의 앞자리 0/포맷 보존(숫자 추론 시 오분류).
+- collector 파생 컬럼(`권역/지역명/newtype/Kind(new)/...`)은 **드롭** → 하위의 검증된 zcode·chgerType 유도
+  경로를 그대로 태운다(파생 `지역명` 포맷 불일치 방지).
+- 워크플로: `update-aep` 의 charger 스텝이 `fetch_charger_from_collector.py` 를 호출(`id: charger`,
+  `continue-on-error` 유지). `fetch_api.py` 는 삭제하지 않고 참고용으로 잔존(현재 미사용).
+- collector 자체 완전성 게이트 + 스크립트의 `MIN_ROWS=400_000` 이중 안전. 일일 수집 실패 시 gz 는 하루 stale 가능(허용).
+
+### 소스 전환 단차/seam (일회성)
+- collector 스냅샷(~489k)은 직접 API 선언치(~521k)보다 ~6% 적음(중복제거/삭제분 필터 추정) →
+  충전기 총량에 **1회성 레벨 단차**(수용 결정). 방법론은 동일(둘 다 환경부 데이터).
+- **섹션⑥(충전기 신규/철거)** 은 diff 기반이라, 마지막 API 스냅샷 → 첫 collector 스냅샷 전환 월에
+  키(statId|chgerId) 차이로 **큰 가짜 순증감(예: 완속 -24k)** 이 한 번 나타난다(verify.py 는 내부
+  정합성만 보므로 통과). 이후 collector→collector diff 는 정상. §11 의 시드↔케이던스 seam 과 동일 성격의
+  **일회성 전환 구간**으로 간주. (전환 월 ⑥ 수치는 참고만.)
