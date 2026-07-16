@@ -34,14 +34,18 @@ SLIM_COLS = C.DETAIL_COLS  # ['key','statId','chgerId','statNm','addr','NewbusiN
 SLOW_CHGER_TYPES = {"02", "07", "08"}  # 08=DC콤보(완속). collector newtype과 99.96%→100% 정렬
 
 ZCODE_TO_SIDO = {
-    '11': '서울특별시', '26': '부산광역시', '27': '대구광역시', '28': '인천광역시',
+    '11': '서울특별시', '12': '전남광주통합특별시',
+    '26': '부산광역시', '27': '대구광역시', '28': '인천광역시',
     '29': '광주광역시', '30': '대전광역시', '31': '울산광역시', '36': '세종특별자치시',
     '41': '경기도', '43': '충청북도', '44': '충청남도', '46': '전라남도',
     '47': '경상북도', '48': '경상남도', '50': '제주특별자치도', '51': '강원특별자치도',
     '52': '전북특별자치도',
 }
+# 참고: '12' 전남광주통합특별시 = 구 29(광주)+46(전남) 통합. 폐지된 29·46 은 미이관 잔재
+# (사업자 미이관 약 85건) 수집 위해 당분간 유지. 원천 REGION_MAP 변경과 동기화.
 ZCODE_TO_REGION = {
     '11': '수도권', '28': '수도권', '41': '수도권',
+    '12': '5대광역시',  # 전남광주통합특별시 = 구 광주(광역시) 지위 승계 → 5대광역시로 집계
     '26': '5대광역시', '27': '5대광역시', '29': '5대광역시', '30': '5대광역시', '31': '5대광역시',
     '36': '지방', '43': '지방', '44': '지방', '46': '지방', '47': '지방',
     '48': '지방', '50': '지방', '51': '지방', '52': '지방',
@@ -98,7 +102,10 @@ def derive_from_raw(raw: pd.DataFrame) -> pd.DataFrame:
     df['지역명'] = z.map(ZCODE_TO_SIDO).fillna('(미상)')
     df['권역'] = z.map(ZCODE_TO_REGION).fillna('지방')
 
-    df['Kind'] = df['kind'].astype(str).str.strip().map(KIND_MAP).fillna('(미상)')
+    # kind 코드의 2번째 자리를 숫자 0이 아니라 영문 O 로 잘못 넣은 원천 오타 정규화
+    # (예: 'BO'→'B0' 주차시설. 이 오타로 급속 카테고리 1,500여 기가 '(미상)'으로 빠졌음)
+    kc = df['kind'].astype(str).str.strip().str.replace('O', '0', regex=False)
+    df['Kind'] = kc.map(KIND_MAP).fillna('(미상)')
     df['KindDetail'] = df['kindDetail'].astype(str).str.strip().map(KINDDETAIL_MAP)
     df['KindDetail'] = df['KindDetail'].fillna(df['kindDetail'])
     df['output'] = out

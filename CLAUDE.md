@@ -194,6 +194,9 @@ AEP Dashboard 탭 ⑥. 월 스냅샷 비교로 충전기 신규/철거를 완속
 - **분석 로직(analyze.py/verify.py)은 collector SSOT 그대로 — 재구현·수정 금지** (`verify.py`는 라벨 일반화 1줄만 수정됨).
 - 매월 바뀌는 건 입력 raw 뿐. CPO 명단·차원·검증 불변식은 `scripts/charger_report/config.py` + collector `METHODOLOGY.md` 기준.
 - 신규 코드(`build_snapshots.py`)는 **입력 컬럼 파생만** 담당: 완속/급속(chgerType 02·07·08 + output 30kW), `NewbusiNm`(transform.apply_operator_mapping + `NAME_MAP`), `지역명/권역`(zcode 표준표), `Kind/KindDetail`(kind 코드표). 코드표는 collector parquet 대조로 캘리브레이션됨(kind purity 1.000).
+- **코드표는 원천 변경에 맞춰 갱신한다**(2026-07):
+  - `ZCODE_TO_SIDO['12']='전남광주통합특별시'` 추가(구 29 광주+46 전남 통합). `ZCODE_TO_REGION['12']='5대광역시'`(구 광주 지위 승계). 폐지된 29·46 은 미이관 잔재(약 85건) 위해 맵에 유지. 안 넣으면 지역명 `(미상)`.
+  - **kind 코드 O→0 정규화**: 원천이 2번째 자리를 숫자 0 아닌 영문 O 로 넣은 오타(`'BO'`→`'B0'` 주차시설)로 급속 카테고리 약 1,500기가 `(미상)`으로 빠졌던 것 수정.
 
 ### CPO 매칭 (exact-string) — 깨지면 holdings=0
 `analyze.py` 는 `NewbusiNm == cpo`(config.CPO_LISTS) 정확 매칭. AEP 매핑은 `'LG유플러스 볼트업'` 을 쓰므로 `NAME_MAP` 으로 `'LG유플러스'` 로 정규화 필수. 펌프킨·한국전기차충전서비스·엘에스이링크는 busiId 미매핑이라 `bnm` fallback 으로 매칭(현재 정상). 새 월 갱신 후 **모든 CPO holdings 가 0이 아닌지** 확인.
