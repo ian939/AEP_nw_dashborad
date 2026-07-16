@@ -22,12 +22,15 @@ from datetime import datetime
 
 import requests
 import pandas as pd
+import pyarrow.parquet as pq
 
 # collector 의 롤링 최신 전국 스냅샷(gzip CSV, 안정 파일명, 매일 01:00 UTC 갱신).
 SRC_URL = "https://raw.githubusercontent.com/ian939/ev-charger-collector/main/latest_data.csv.gz"
 RETRY = 5
 TIMEOUT = 120
-MIN_ROWS = 400_000  # 이보다 적으면 부분/깨진 스냅샷으로 보고 실패.
+MIN_ROWS = 400_000  # 절대 하한 — 이보다 적으면 부분/깨진 스냅샷으로 보고 실패.
+MIN_RATIO_VS_PREV = 0.95  # 직전 스냅샷 대비 이 비율 미만이면 부분수집으로 보고 실패
+                          # (절대 하한만으론 "약 3만대 누락(6%)" 같은 부분수집을 못 걸러서 추가).
 
 # collector 가 앞단에 붙인 파생 컬럼 — 드롭해 원본 API raw 형태로 정규화한다.
 # (하위의 검증된 zcode→지역, chgerType+output→완속/급속 유도 경로를 그대로 태우기 위함)
@@ -59,6 +62,19 @@ def download(url: str) -> bytes:
     raise RuntimeError(f"collector 스냅샷 다운로드 실패(재시도 {RETRY}회 소진): {last_err}")
 
 
+def prev_raw_rows(exclude_path: Path):
+    """target 을 제외한 가장 최근(날짜 큰) raw_*.parquet 의 행 수를 메타데이터로 싸게 읽는다.
+    없으면 None. 부분수집이 직전 스냅샷을 조용히 덮어쓰는 것을 막는 상대 게이트용."""
+    cands = sorted(p for p in RAW_DIR.glob("raw_*.parquet") if p.resolve() != exclude_path.resolve())
+    if not cands:
+        return None, None
+    prev = cands[-1]
+    try:
+        return prev.name, pq.ParquetFile(prev).metadata.num_rows
+    except Exception:
+        return prev.name, None
+
+
 def main():
     today = datetime.now().strftime("%Y%m%d")
     out_path = RAW_DIR / f"raw_{today}.parquet"
@@ -75,10 +91,20 @@ def main():
     )
     print(f"원본 행 수: {len(df):,}, 컬럼 수: {len(df.columns)}")
 
-    # 완전성 게이트
+    # 완전성 게이트 1) 절대 하한
     if len(df) < MIN_ROWS:
         print(f"ERROR: 행 수 {len(df):,} < 최소 {MIN_ROWS:,} — 부분/깨진 스냅샷으로 판단, 발행 중단.")
         sys.exit(1)
+
+    # 완전성 게이트 2) 직전 스냅샷 대비 상대 하한 (부분수집이 완전 데이터를 덮어쓰는 것 방지)
+    prev_name, prev_rows = prev_raw_rows(out_path)
+    if prev_rows:
+        floor = int(prev_rows * MIN_RATIO_VS_PREV)
+        print(f"직전 스냅샷 {prev_name}: {prev_rows:,}행 (하한 {floor:,} = {MIN_RATIO_VS_PREV:.0%})")
+        if len(df) < floor:
+            print(f"ERROR: 행 수 {len(df):,} < 직전 대비 하한 {floor:,} — 부분수집 의심, 발행 중단. "
+                  f"collector 재수집 후 재실행하세요.")
+            sys.exit(1)
 
     # collector 파생 컬럼 드롭(존재하는 것만)
     drop = [c for c in DROP_COLS if c in df.columns]
@@ -99,6 +125,8 @@ def main():
     meta = {
         "fetched_at": datetime.now().isoformat(),
         "row_count": int(len(df)),
+        "prev_file": prev_name,
+        "prev_row_count": prev_rows,
         "source": "ian939/ev-charger-collector",
         "source_file": "latest_data.csv.gz",
         "file": out_path.name,
