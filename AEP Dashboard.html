@@ -912,6 +912,32 @@ async function loadDashboardData() {
 }
 
 // ============================================================================
+// 축 스케일 헬퍼 — 데이터 max/min 에 여유(headroom)를 더해 나이스 라운딩.
+// datalabel/라인 꼭짓점이 플롯 위로 넘쳐 잘리는 것 방지(월 데이터가 커져도 자동 적응).
+// ============================================================================
+function _flatNums(vals) {
+  return [].concat(...(Array.isArray(vals) ? vals : [vals]))
+    .map(Number).filter(v => Number.isFinite(v));
+}
+function axisMax(vals, pad = 1.10) {
+  const xs = _flatNums(vals);
+  if (!xs.length) return undefined;
+  const mx = Math.max(...xs) * pad;
+  const mag = Math.pow(10, Math.floor(Math.log10(Math.abs(mx) || 1)) - 1) || 1;
+  return Math.ceil(mx / mag) * mag;
+}
+function axisMin(vals, pad = 0.06) {
+  const xs = _flatNums(vals);
+  if (!xs.length) return undefined;
+  const lo = Math.min(...xs), hi = Math.max(...xs);
+  const rng = (hi - lo) || Math.abs(hi) || 1;
+  let mn = lo - rng * pad;
+  if (lo >= 0 && mn < 0) mn = 0;
+  const mag = Math.pow(10, Math.floor(Math.log10(Math.abs(mn) || 1)) - 1) || 1;
+  return Math.floor(mn / mag) * mag;
+}
+
+// ============================================================================
 // RENDERING
 // ============================================================================
 function render(data) {
@@ -999,7 +1025,7 @@ function renderOverview(ov) {
       plugins: { legend: { position: 'top', align: 'start' }, datalabels: { display: false } },
       scales: {
         y: { beginAtZero: true, grid: { color: '#f0f2f7' }, ticks: { callback: v => v + 'K' } },
-        y1: { position: 'right', min: 2.0, max: 2.3, grid: { display: false } }
+        y1: { position: 'right', min: axisMin(ov.slow_ev_per_port), max: axisMax(ov.slow_ev_per_port, 1.12), grid: { display: false } }
       }
     }
   });
@@ -1019,7 +1045,7 @@ function renderOverview(ov) {
       plugins: { legend: { position: 'top', align: 'start' }, datalabels: { display: false } },
       scales: {
         y: { beginAtZero: true, grid: { color: '#f0f2f7' }, ticks: { callback: v => v + 'K' } },
-        y1: { position: 'right', min: 15, max: 20, grid: { display: false } }
+        y1: { position: 'right', min: axisMin(ov.fast_ev_per_port), max: axisMax(ov.fast_ev_per_port, 1.12), grid: { display: false } }
       }
     }
   });
@@ -1155,7 +1181,7 @@ function renderSlowTrend(months, trend, trendTop10) {
         tooltip: { callbacks: { label: c => `${c.dataset.label}: ${c.parsed.y?.toLocaleString() || '-'}` } }
       },
       scales: {
-        y: { beginAtZero: true, max: 80000, grid: { color: '#f0f2f7' }, ticks: { callback: v => (v/1000) + 'K' } },
+        y: { beginAtZero: true, max: axisMax(ops10.map(op => lineTrend[op]), 1.08), grid: { color: '#f0f2f7' }, ticks: { callback: v => (v/1000) + 'K' } },
         x: { grid: { display: false }, ticks: { maxRotation: 45, minRotation: 45, font: { size: 9 }, autoSkip: false } }
       }
     }
@@ -1191,7 +1217,7 @@ function renderFastTrend(months, trend, trendTop10) {
         tooltip: { callbacks: { label: c => `${c.dataset.label}: ${c.parsed.y?.toLocaleString() || '-'}` } }
       },
       scales: {
-        y: { beginAtZero: true, max: 7000, grid: { color: '#f0f2f7' }, ticks: { callback: v => v.toLocaleString() } },
+        y: { beginAtZero: true, max: axisMax(ops10.map(op => lineTrend[op]), 1.08), grid: { color: '#f0f2f7' }, ticks: { callback: v => v.toLocaleString() } },
         x: { grid: { display: false }, ticks: { maxRotation: 45, minRotation: 45, font: { size: 8.5 }, autoSkip: true, maxTicksLimit: 20 } }
       }
     }
@@ -1555,7 +1581,7 @@ function renderEvMarket(ev) {
           tension: 0.2, yAxisID: 'y1', order: 1, datalabels: lineDatalabelOpts('#e4002b') }
       ]
     },
-    options: evRegOptions(900, 0, 4, '#e4002b')
+    options: evRegOptions(axisMax(winPassK, 1.12), 0, 4, '#e4002b')
   });
 
   // Chart 2: Commercial EV
@@ -1572,7 +1598,7 @@ function renderEvMarket(ev) {
           tension: 0.2, yAxisID: 'y1', order: 1, datalabels: lineDatalabelOpts('#e4002b') }
       ]
     },
-    options: evRegOptions(200, 6, 10, '#e4002b')
+    options: evRegOptions(axisMax(winCommK, 1.12), 6, 10, '#e4002b')
   });
 
   // Chart 3: LTM Sales (마지막 13개월: Mar-25~Mar-26)
