@@ -140,10 +140,23 @@ def merge_into_dashboard(historical: dict, snapshots: list) -> dict:
             fast_all = snap["fast"].get("all_operators", {})
             result.setdefault("slow_trend_top10", {})
             result.setdefault("fast_trend_top10", {})
+
+            # dashboard_top10 에 사업자를 새로 추가하면 그 배열만 빈 상태로 시작해
+            # 다른 계열보다 짧아진다. Chart.js 는 배열을 왼쪽부터 정렬하므로
+            # 짧은 배열은 과거 구간에 잘못 그려진다 → 기존 계열 길이에 맞춰
+            # 선행 None 으로 패딩해 월 정렬을 보장한다.
+            def _append_aligned(bucket: dict, op: str, value):
+                series = bucket.get(op)
+                if series is None:
+                    pad = max((len(v) for v in bucket.values()), default=0)
+                    series = [None] * pad
+                    bucket[op] = series
+                series.append(value)
+
             for op in slow_top10:
-                result["slow_trend_top10"].setdefault(op, []).append(slow_all.get(op))
+                _append_aligned(result["slow_trend_top10"], op, slow_all.get(op))
             for op in fast_top10:
-                result["fast_trend_top10"].setdefault(op, []).append(fast_all.get(op))
+                _append_aligned(result["fast_trend_top10"], op, fast_all.get(op))
 
             month_totals[label] = {
                 "slow_K": round(snap["slow"]["total"] / 1000, 1),
