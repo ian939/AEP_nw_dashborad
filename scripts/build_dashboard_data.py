@@ -260,13 +260,36 @@ def _append_ev_market(result: dict, label: str, ym: str,
                 return v
         return None
 
+    def _recent_veh_growth(pen_arr, K_arr, lookback=3):
+        """누적 전체차량(분모)의 최근 월평균 증가분을 역산해 추정.
+
+        total_vehicles(월간 신규등록)를 못 받은 달의 폴백. 누적 분모는 ~27M 규모의
+        완만한 stock 이라 월 증가분(~+15만)이 0.6% 수준 → 보급률에 미치는 영향이
+        미미하다(민감도: 분모 ±25만 이면 보급률 ±0.04%p). 따라서 분모를 직전월에
+        고정(증가 0)하는 것보다 최근 추세로 추정하는 편이 정확하다.
+
+        주의: 오래된 구간의 pen 은 소수 2자리로 반올림돼 있어 역산 분모에
+        ±4만 수준 노이즈가 섞이고 음수 증가분도 나온다. 그래서 최근 lookback
+        구간만 쓰고, 음수는 버린 뒤 평균한다.
+        """
+        vehs = []
+        for i in range(len(pen_arr)):
+            if pen_arr[i] is not None and i < len(K_arr) and K_arr[i]:
+                vehs.append((K_arr[i] * 1000) / (pen_arr[i] / 100))
+        deltas = [b - a for a, b in zip(vehs, vehs[1:]) if b > a]
+        if not deltas:
+            return 0.0
+        recent = deltas[-lookback:]
+        return sum(recent) / len(recent)
+
     def _estimate_total_pen(pen_arr, K_arr, new_cum_K, monthly_new_veh):
-        if monthly_new_veh <= 0:
-            return None
         for i in range(len(pen_arr) - 1, -1, -1):
             if pen_arr[i] is not None and i < len(K_arr) and K_arr[i]:
                 prev_total_veh = (K_arr[i] * 1000) / (pen_arr[i] / 100)
-                new_total_veh = prev_total_veh + monthly_new_veh
+                # total_vehicles 미확보(0) 시 최근 추세로 분모 증가분 추정.
+                # 누적 EV(분자)는 실측이므로 보급률 자체는 견고하다.
+                inc = monthly_new_veh if monthly_new_veh > 0 else _recent_veh_growth(pen_arr, K_arr)
+                new_total_veh = prev_total_veh + inc
                 return round((new_cum_K * 1000) / new_total_veh * 100, 2)
         return None
 

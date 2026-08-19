@@ -511,6 +511,8 @@
       <div class="card-body" style="padding:0; overflow-x:auto;">
         <table class="tbl" id="evMetricsTable"></table>
       </div>
+      <!-- 추정치(*) 각주 — renderEvMarket 이 해당 월 있을 때만 채운다 -->
+      <div class="source" id="evMetricsNote" style="display:none;padding-top:0"></div>
       <div class="source">Source: MOLIT, MOE · (1) Passenger EV Sales / Total Passenger Vehicle Sales; (2) Commercial EV Sales / Total Commercial Vehicle Sales</div>
     </div>
   </section>
@@ -1511,10 +1513,13 @@ function renderEvMarket(ev) {
       notice.style.cssText = 'display:block;margin-bottom:14px;padding:11px 14px;border-radius:8px;'
         + 'background:#fff8e6;border:1px solid #f0d9a0;border-left:4px solid #e0a032;'
         + 'font-size:12px;line-height:1.6;color:#6b4e14;';
-      notice.innerHTML = `<strong>⚠ 일부 차량 데이터 미수집 (${gaps.join(', ')})</strong><br>`
-        + `한국교통안전공단(KOTSA) 신규등록 API 장애로 <strong>전체 차량 신규등록(분모)</strong>을 받지 못했습니다. `
-        + `해당 월의 <strong>보급률(Penetration)·EV 판매 비중(Share)은 공백(N/A)</strong>으로 표시됩니다 — 0 이 아닙니다.<br>`
-        + `누적·월간 EV 등록대수는 실측값으로 반영돼 있습니다. API 회복 후 정식 수집값으로 대체됩니다.`;
+      notice.innerHTML = `<strong>⚠ ${gaps.join(', ')} · 월간 판매 비중 미산출</strong><br>`
+        + `한국교통안전공단(KOTSA) 신규등록 API 장애로 <strong>월간 전체 차량 신규등록</strong>을 받지 못했습니다. `
+        + `해당 월의 <strong>EV 판매 비중(Share)은 공백(—)</strong>으로 표시됩니다 — 0 이 아닙니다.<br>`
+        + `누적 EV 등록대수는 <strong>실측값</strong>이며, <strong>누적 보급률(Penetration)은 추정치</strong>입니다 `
+        + `— 누적 전체차량(약 2,700만대)의 최근 3개월 평균 증가분으로 분모를 추정했습니다. `
+        + `분모를 ±25만대 달리 잡아도 보급률 변동은 ±0.04%p 수준이라 영향은 미미합니다. `
+        + `API 회복 후 정식 수집값으로 대체됩니다.`;
     } else {
       notice.style.display = 'none';
     }
@@ -1544,7 +1549,7 @@ function renderEvMarket(ev) {
   const kpiPassSub = document.getElementById('evKpiPassSub');
   if (kpiPassSub) kpiPassSub.textContent = `Commercial: ${commLast.toLocaleString()}대`;
   const kpiPen = document.getElementById('evKpiPen');
-  // penLast 가 null 이면 해당 월 차량(KOTSA) 미수집 → 'N/A' 로 표기 (null% 방지)
+  // penLast 가 null 인 경우(분모 추정 불가)만 N/A — 'null%' 출력 방지용 가드
   if (kpiPen) kpiPen.innerHTML = penLast == null
     ? `N/A<span class="unit">미수집</span>`
     : `${penLast}<span class="unit">%</span>`;
@@ -1701,9 +1706,15 @@ function renderEvMarket(ev) {
   // penetration: precise.months의 첫 월을 ev_months에서 찾아 동기화
   // (precise.months가 ev_months 끝에서 13개 슬라이스이므로 첫 월 위치 = 시작 인덱스)
   const penStart = ev.ev_months.indexOf(precise.months[0]);
+  // 차량 API 미수집 월은 분모를 추정해 보급률을 산출한다 → '*' 로 추정치 표시.
+  // 판별 근거: 같은 월의 월간 판매 비중(share)이 null = 전체차량 미확보.
+  const estMonths = new Set(
+    (ev.ev_sales_months || []).filter((m, i) => ev.ev_sales_share_pct[i] == null)
+  );
   const fmtP = (arr, i) => {
     const v = arr[penStart + i];
-    return v != null ? v.toFixed(2) + '%' : '—';
+    if (v == null) return '—';
+    return v.toFixed(2) + '%' + (estMonths.has(tMonths[i]) ? '<sup>*</sup>' : '');
   };
 
   // 카드 타이틀 / source 라벨 동적 갱신 (정적 'Mar 25 ~ Mar 26' 하드코딩 제거)
@@ -1715,6 +1726,17 @@ function renderEvMarket(ev) {
     const sStart = ev.ev_sales_months[Math.max(0, ev.ev_sales_months.length - 13)].replace('-', " '");
     const sEnd   = ev.ev_sales_months[ev.ev_sales_months.length - 1].replace('-', " '");
     salesSourceEl.textContent = `Source: MOLIT, MOE · (1) Passenger EV Sales / Total Passenger Vehicle Sales; (2) Commercial EV Sales / Total Commercial Vehicle Sales · ${sStart} ~ ${sEnd}`;
+  }
+
+  // 추정치(*) 각주 — 해당 월이 있을 때만 노출
+  const metricsNote = document.getElementById('evMetricsNote');
+  if (metricsNote) {
+    const est = tMonths.filter(m => estMonths.has(m));
+    metricsNote.innerHTML = est.length
+      ? `* ${est.join(', ')} 보급률은 <strong>추정치</strong> — 누적 EV(분자)는 실측이나 KOTSA API 장애로 `
+        + `누적 전체차량(분모)을 최근 3개월 평균 증가분으로 추정. 분모 ±25만대 가정차에도 ±0.04%p 수준.`
+      : '';
+    metricsNote.style.display = est.length ? 'block' : 'none';
   }
 
   tableEl.innerHTML = `
