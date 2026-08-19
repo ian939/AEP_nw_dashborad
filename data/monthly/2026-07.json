@@ -256,8 +256,8 @@
   },
   "_meta": {
     "year_month": "2026-07",
-    "source_file": "raw_20260814.parquet",
-    "processed_at": "2026-08-14T18:22:25.800800",
+    "source_file": "raw_20260819.parquet",
+    "processed_at": "2026-08-19T08:10:46.510275",
     "raw_row_count": 524714
   }
 }
