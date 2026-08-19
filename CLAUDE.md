@@ -293,3 +293,53 @@ KOTSA 신규등록 API 장애로 연료·지역·공식총계 축은 비어 "API
   키(statId|chgerId) 차이로 **큰 가짜 순증감(예: 완속 -24k)** 이 한 번 나타난다(verify.py 는 내부
   정합성만 보므로 통과). 이후 collector→collector diff 는 정상. §11 의 시드↔케이던스 seam 과 동일 성격의
   **일회성 전환 구간**으로 간주. (전환 월 ⑥ 수치는 참고만.)
+
+---
+
+## 15. 차량(KOTSA) 수집 실패 시 수동 입력 절차
+
+KOTSA `B553881` 장애로 자동수집이 실패했을 때, 누적 EV 실측값만 확보되면 수동 반영 가능하다.
+
+### 진단 먼저 (재실행 낭비 방지)
+로컬에서 **실제 키로** 호출해 `errMsg` 를 본다. curl 로 가짜 키를 던져 `403` 이 오는 건 게이트웨이만
+살아있다는 뜻이므로 **회복 판정 근거가 아니다**.
+- `SERVICETIMEOUT_ERROR`(code 05) → 서비스 다운. 재실행 무의미, 대기.
+- 과거 성공월(예: 2026-06)도 같이 실패하면 전면 장애 확정.
+- 대조군: 환경부 `B552584/EvCharger/getChargerInfo` 가 200 이면 내 네트워크·키는 결백.
+
+### 수동 입력
+`data/ev_registration/{ym}.json` 을 직접 만든다. **`monthly_new` = 이번달 누적 − 직전달 누적**.
+```json
+{ "year_month": "2026-07", "_source": "manual",
+  "monthly_new":  { "total_vehicles": 0, "total_ev": 34628, "passenger_ev": 29953, "commercial_ev": 4675 },
+  "cumulative":   { "total_ev": 1131483, "passenger_ev": 925095, "commercial_ev": 206388 } }
+```
+그리고 `cumulative.json` 을 같은 값으로 갱신 후 `python scripts/build_dashboard_data.py`.
+
+- **`total_vehicles`(전체 차량 신규등록 = 분모)는 절대 추정해 채우지 말 것.** `0` 으로 두면
+  `share_pct`/`penetration_pct` 가 `None` 이 되어 대시보드에 공백(N/A)으로 표시된다. 값을 지어내면
+  보급률이 조용히 틀린다.
+- 반드시 `passenger + commercial == total` 검증(누적·월간 양쪽).
+- 대시보드는 `evDataNotice` 배너로 미수집 월을 자동 표기(최근 6개월만 검사). 월 하드코딩 금지.
+- API 회복 후 `TARGET_YYYYMM=202607` 로 재실행하면 §2 멱등성 가드가 수동값을 정식값으로 대체한다.
+
+### 주의: 미수집을 방치하면 생기는 오독
+분자(누적 EV)가 직전 월에 고정된 채 분모만 추정 증가하면 보급률이 **하락한 것처럼** 보인다
+(실제 사례: Jul-26 이 4.06%→4.04%). 실제 감소가 아니라 계산 artifact다.
+
+---
+
+## 16. dashboard_top10 에 사업자 추가하는 법
+
+완속/급속 추세 차트는 `slow_trend_top10`/`fast_trend_top10` 을 그린다(`slow_trend` 6사가 아님 —
+차트 제목의 '+Epic' 과 혼동 주의). 새 사업자를 차트에 넣으려면 **두 곳** 을 고쳐야 한다.
+1. `data/operator_mapping.json` → `dashboard_top10.slow`(또는 `.fast`) 에 이름 추가
+2. `data/historical.json` → 해당 `*_trend_top10` 에 과거 구간 시드
+   (`*_trend` 에 이미 있으면 그 배열을 그대로 복사)
+
+2번을 빼먹으면 최근 몇 개월만 값이 있는 짧은 배열이 되고, **Chart.js 는 배열을 왼쪽부터 정렬하므로
+과거 구간(Jan-24~)에 잘못 그려진다.** `build_dashboard_data.py` 의 `_append_aligned()` 가 선행 `None`
+패딩으로 방어하지만, 과거 실제값을 원하면 시드가 필요하다.
+
+검증: **재빌드를 2회 연속** 돌려 모든 계열 길이가 `len(months)`(급속은 `months_fast_extended`) 로
+유지되는지 확인(멱등성). 길이가 늘어나면 중복 append 버그다.
