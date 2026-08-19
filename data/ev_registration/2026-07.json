@@ -1,0 +1,16 @@
+{
+  "year_month": "2026-07",
+  "_source": "manual",
+  "_note": "KOTSA B553881 API 전면 장애(SERVICETIMEOUT_ERROR)로 자동수집 실패. 누적 EV는 사용자 제공 실측값으로 수동 입력. total_vehicles(전체 차량 신규등록)는 미확보 → 0으로 두어 share/penetration을 의도적으로 공백(null) 처리. API 회복 후 TARGET_YYYYMM=202607 재실행 시 정식 수집값으로 대체할 것.",
+  "monthly_new": {
+    "total_vehicles": 0,
+    "total_ev": 34628,
+    "passenger_ev": 29953,
+    "commercial_ev": 4675
+  },
+  "cumulative": {
+    "total_ev": 1131483,
+    "passenger_ev": 925095,
+    "commercial_ev": 206388
+  }
+}

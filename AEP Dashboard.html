@@ -478,6 +478,8 @@
 
   <!-- TAB 0: EV MARKET -->
   <section class="tab-panel active" id="tab-ev">
+    <!-- 차량(KOTSA) 데이터 수집 상태 배너 — dataNotice() 가 조건부로 채운다 -->
+    <div id="evDataNotice" style="display:none"></div>
     <div class="grid-kpi" id="evKpiGrid">
       <div class="kpi"><div class="label">Total Registered EVs</div><div class="value" id="evKpiTotal">—</div><div class="delta" id="evKpiTotalDelta"></div></div>
       <div class="kpi"><div class="label">Passenger EVs</div><div class="value" id="evKpiPass">—</div><div class="delta up" id="evKpiPassSub" style="font-size:10.5px;color:var(--text-muted)"></div></div>
@@ -1491,6 +1493,33 @@ function renderEvMarket(ev) {
   const prevIdx = lastIdx - 1;
   const precise = ev.ev_table_precise;
 
+  // ── 차량(KOTSA) 미수집 월 안내 ──────────────────────────────────────
+  // share/penetration 이 null 인 월 = 전체차량(분모) 미확보. 빈칸을 '0' 으로
+  // 오독하지 않도록 배너로 명시한다. 월 하드코딩 금지 — 데이터에서 판별.
+  const notice = document.getElementById('evDataNotice');
+  if (notice) {
+    // 최근 6개월만 검사 — Nov-24~Feb-25 등 오래된 historical 공백은 이미 알려진
+    // 항목이므로 배너에 섞으면 노이즈가 된다. 최신 장애만 알린다.
+    const RECENT = 6;
+    const penGap = ev.ev_months.slice(-RECENT)
+      .filter((m, i) => ev.ev_total_penetration_pct[ev.ev_months.length - RECENT + i] == null);
+    const shareGap = ev.ev_sales_months.slice(-RECENT)
+      .filter((m, i) => ev.ev_sales_share_pct[ev.ev_sales_months.length - RECENT + i] == null);
+    const gaps = [...new Set([...penGap, ...shareGap])];
+    if (gaps.length) {
+      notice.style.display = 'block';
+      notice.style.cssText = 'display:block;margin-bottom:14px;padding:11px 14px;border-radius:8px;'
+        + 'background:#fff8e6;border:1px solid #f0d9a0;border-left:4px solid #e0a032;'
+        + 'font-size:12px;line-height:1.6;color:#6b4e14;';
+      notice.innerHTML = `<strong>⚠ 일부 차량 데이터 미수집 (${gaps.join(', ')})</strong><br>`
+        + `한국교통안전공단(KOTSA) 신규등록 API 장애로 <strong>전체 차량 신규등록(분모)</strong>을 받지 못했습니다. `
+        + `해당 월의 <strong>보급률(Penetration)·EV 판매 비중(Share)은 공백(N/A)</strong>으로 표시됩니다 — 0 이 아닙니다.<br>`
+        + `누적·월간 EV 등록대수는 실측값으로 반영돼 있습니다. API 회복 후 정식 수집값으로 대체됩니다.`;
+    } else {
+      notice.style.display = 'none';
+    }
+  }
+
   // KPI: 정밀값 사용
   const totalLast = precise.total[precise.total.length - 1];
   const totalPrev = precise.total[precise.total.length - 2];
@@ -1515,9 +1544,12 @@ function renderEvMarket(ev) {
   const kpiPassSub = document.getElementById('evKpiPassSub');
   if (kpiPassSub) kpiPassSub.textContent = `Commercial: ${commLast.toLocaleString()}대`;
   const kpiPen = document.getElementById('evKpiPen');
-  if (kpiPen) kpiPen.innerHTML = `${penLast}<span class="unit">%</span>`;
+  // penLast 가 null 이면 해당 월 차량(KOTSA) 미수집 → 'N/A' 로 표기 (null% 방지)
+  if (kpiPen) kpiPen.innerHTML = penLast == null
+    ? `N/A<span class="unit">미수집</span>`
+    : `${penLast}<span class="unit">%</span>`;
   const kpiPenDelta = document.getElementById('evKpiPenDelta');
-  if (kpiPenDelta && penPrev != null) {
+  if (kpiPenDelta && penLast != null && penPrev != null) {
     const d = +(penLast - penPrev).toFixed(1);
     kpiPenDelta.textContent = `${d>=0?'▲ +':'▽ '}${d}%p vs ${ev.ev_months[prevIdx]}`;
     kpiPenDelta.className = 'delta ' + (d >= 0 ? 'up' : 'down');
