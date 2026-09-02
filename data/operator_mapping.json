@@ -21,7 +21,8 @@
       "CV"
     ],
     "SK일렉링크": [
-      "ST"
+      "ST",
+      "KE"
     ],
     "이브이시스": [
       "JA"
@@ -131,5 +132,6 @@
       "엘에스이링크",
       "파킹클라우드"
     ]
-  }
+  },
+  "_note_skel_kevit": "SK일렉링크 = SKEL(busiId ST) + KEVIT/한국전기차인프라기술(busiId KE) 합산. 합산 적용 구간은 monthly 스냅샷이 있는 Mar-26 이후이며, historical.json 의 Jan-24~Feb-26 은 사업자별 원자료가 없어 SKEL 단독 집계로 남는다 (Feb-26 -> Mar-26 사이 완속 약 +4,000기 단차는 실제 증설이 아니라 집계 기준 변경)."
 }
