@@ -46,12 +46,29 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_charger_from_collector.py
 
+      # KOTSA 는 러너→apis.data.go.kr 경로가 간헐적으로 막혀 첫 호출부터
+      # ConnectTimeoutError 가 난다(같은 시각 로컬은 0.5초 정상 응답).
+      # 스크립트 내부 재시도(5회·지수백오프)로도 못 뚫리는 구간이 있어,
+      # 워크플로 레벨에서 3분 간격으로 한 번 더 시도한다.
       - name: Fetch EV registration data (차량 · KOTSA)
         id: vehicle
         continue-on-error: true
         env:
           EV_REG_API_KEY: ${{ secrets.EV_REG_API_KEY }}
-        run: python scripts/fetch_ev_registration.py
+        run: |
+          for attempt in 1 2; do
+            echo "::group::vehicle fetch attempt $attempt/2"
+            if python scripts/fetch_ev_registration.py; then
+              echo "::endgroup::"
+              exit 0
+            fi
+            echo "::endgroup::"
+            if [ "$attempt" -lt 2 ]; then
+              echo "attempt $attempt 실패 — 180초 후 재시도"
+              sleep 180
+            fi
+          done
+          exit 1
 
       # transform 은 충전기 raw 를 월 스냅샷으로 변환 — 충전기 성공 시에만.
       # (실패 시 돌리면 지난달 raw 를 이번 달로 잘못 라벨링해 오염됨)

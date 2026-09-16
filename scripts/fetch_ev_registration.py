@@ -13,11 +13,18 @@
 import os
 import io
 import json
+import sys
 import time
 import requests
 import pandas as pd
 from pathlib import Path
 from datetime import date
+
+# Windows 기본 콘솔 인코딩(cp949)에서 '—' '→' 같은 문자가 UnicodeEncodeError 를 내
+# 멱등 재실행 경로가 죽던 문제 방지. CI(리눅스)는 이미 UTF-8 이라 무영향.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 EV_REG_DIR = REPO_ROOT / "data" / "ev_registration"
@@ -47,7 +54,12 @@ def get_target_ym() -> tuple[str, str]:
 
 def fetch_count(yr: str, month: str, sido_code: str,
                 use_fuel_ev: bool = False, prpos: str | None = None,
-                retries: int = 3, sleep_sec: int = 10) -> int:
+                retries: int = 5, timeout: int = 60) -> int:
+    """KOTSA 단건 조회. 실패 시 지수 백오프(5→10→20→40초)로 재시도.
+
+    타임아웃 60초/5회는 GitHub 러너에서 관측된 간헐적 연결 지연을 흡수하기 위한 값이다.
+    로컬 정상 응답은 0.5초 수준이므로 정상 경로의 비용 증가는 없다.
+    """
     api_key = os.environ.get("EV_REG_API_KEY", "")
     params = {
         "serviceKey":    api_key,
@@ -63,14 +75,49 @@ def fetch_count(yr: str, month: str, sido_code: str,
     last_err = None
     for attempt in range(retries):
         try:
-            resp = requests.get(URL, params=params, timeout=30)
+            resp = requests.get(URL, params=params, timeout=timeout)
             df = pd.read_xml(io.BytesIO(resp.content)).fillna(0)
             return int(df["dtaCo"].dropna().values[1])
         except Exception as e:
             last_err = e
             if attempt < retries - 1:
-                time.sleep(sleep_sec)
+                backoff = 5 * (2 ** attempt)   # 5, 10, 20, 40
+                print(f"    [retry {attempt+1}/{retries-1}] sido={sido_code} "
+                      f"{type(e).__name__} → {backoff}s 후 재시도", flush=True)
+                time.sleep(backoff)
     raise RuntimeError(f"API 실패 sido={sido_code} fuel_ev={use_fuel_ev} prpos={prpos}: {last_err}")
+
+
+def preflight() -> None:
+    """85회 본수집 전 단건으로 연결을 확인한다.
+
+    과거 실패는 전부 첫 호출부터 ConnectTimeoutError 였다(러너→apis.data.go.kr 경로 문제).
+    본수집에 들어가면 시도마다 재시도를 반복해 시간만 쓰고 전량 폐기되므로,
+    여기서 먼저 끊고 원인을 로그에 남긴다.
+    """
+    api_key = os.environ.get("EV_REG_API_KEY", "")
+    if not api_key:
+        raise RuntimeError("EV_REG_API_KEY 가 비어 있습니다 (GitHub Secret 확인).")
+    try:
+        resp = requests.get(URL, params={
+            "serviceKey": api_key, "registYy": "2026",
+            "registMt": "06", "registGrcCode": "1",
+        }, timeout=60)
+    except Exception as e:
+        raise RuntimeError(
+            f"[preflight] KOTSA 연결 실패: {type(e).__name__}: {e}\n"
+            "  → 러너에서 apis.data.go.kr 로 나가는 경로 문제일 가능성이 높습니다.\n"
+            "    (같은 시각 로컬에서 정상 응답하면 공급자 장애가 아님)\n"
+            "  → 회복 후 재실행하거나, 로컬에서 TARGET_YYYYMM 지정 실행 후 커밋하세요."
+        ) from e
+
+    body = resp.text
+    if "SERVICETIMEOUT_ERROR" in body or "<errMsg>" in body:
+        raise RuntimeError(
+            f"[preflight] KOTSA 서비스 오류 응답(HTTP {resp.status_code}): {body[:200]}\n"
+            "  → 공급자 백엔드 장애입니다. 회복 후 재실행하세요."
+        )
+    print(f"[preflight] KOTSA 연결 정상 (HTTP {resp.status_code})")
 
 
 def collect_national(yr: str, month: str,
@@ -89,6 +136,7 @@ def main():
     yr, month = get_target_ym()
     ym = f"{yr}-{month}"
     print(f"\n=== EV 신규등록 수집: {ym} ===")
+    preflight()
 
     print("\n[1/4] 전체 차량 신규등록")
     total_vehicles = collect_national(yr, month, label="전체차량")
