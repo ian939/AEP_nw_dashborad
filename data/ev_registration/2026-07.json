@@ -1,9 +1,9 @@
 {
   "year_month": "2026-07",
   "_source": "manual",
-  "_note": "KOTSA B553881 API 전면 장애(SERVICETIMEOUT_ERROR)로 자동수집 실패. 누적 EV는 사용자 제공 실측값으로 수동 입력. total_vehicles(전체 차량 신규등록)는 미확보 → 0으로 두어 share/penetration을 의도적으로 공백(null) 처리. API 회복 후 TARGET_YYYYMM=202607 재실행 시 정식 수집값으로 대체할 것.",
+  "_note": "KOTSA API 장애로 EV 대수는 사용자 제공 실측 누적값 기반 수동 입력 상태를 유지한다. API 회복 후(2026-09) total_vehicles(전체 차량 신규등록) 134,316 만 실측으로 채웠다. 참고: API 재수집 시 7월 월간 EV 는 35,365(승용 27,601/상용 7,764)로 수동값과 차이가 있어 (총 +737, 승용 -2,352, 상용 +3,089) 임의 대체하지 않았다. 승용/상용 정의 차이로 추정.",
   "monthly_new": {
-    "total_vehicles": 0,
+    "total_vehicles": 134316,
     "total_ev": 34628,
     "passenger_ev": 29953,
     "commercial_ev": 4675

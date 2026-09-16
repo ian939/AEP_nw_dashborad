@@ -1,0 +1,14 @@
+{
+  "year_month": "2026-08",
+  "monthly_new": {
+    "total_vehicles": 110298,
+    "total_ev": 30121,
+    "passenger_ev": 21828,
+    "commercial_ev": 8293
+  },
+  "cumulative": {
+    "total_ev": 1161604,
+    "passenger_ev": 946923,
+    "commercial_ev": 214681
+  }
+}
