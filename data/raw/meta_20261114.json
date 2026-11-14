@@ -1,0 +1,9 @@
+{
+  "fetched_at": "2026-11-14T18:09:07.862216",
+  "row_count": 528320,
+  "prev_file": "raw_20261014.parquet",
+  "prev_row_count": 525269,
+  "source": "ian939/ev-charger-collector",
+  "source_file": "latest_data.csv.gz",
+  "file": "raw_20261114.parquet"
+}
